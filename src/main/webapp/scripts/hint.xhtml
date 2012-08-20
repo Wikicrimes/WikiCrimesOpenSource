@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC
+"-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:c="http://java.sun.com/jstl/core"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:t="http://myfaces.apache.org/tomahawk"
+	xmlns:rich="http://richfaces.org/rich"
+	xmlns:a4j="http://richfaces.org/a4j">
+
+	<script type="text/javascript">
+	        /* <![CDATA[ */
+	        
+			function mostraHintNoMapa(msg, latlng, negrito){
+            	var hint = document.getElementById("divHint");
+            	map.getPane(G_MAP_FLOAT_PANE).appendChild(hint);
+
+				//não sair da tela
+				var numCaracteres = msg.length;
+				var widthEx = numCaracteres <= 15 ? numCaracteres : 15; //20 é uma largura máxima (em caracteres)
+				var panel = document.getElementById("panelHint"); 
+				panel.style.textAlign = 'center';
+				if(negrito)
+					panel.style.fontWeight = 'bold';
+				else
+					panel.style.fontWeight = 'normal';
+				panel.style.width = widthEx + "ex"; //a largura em "em" (relativo ao tamanho da fonte)
+				var widthPixel = panel.offsetWidth; //a largura em pixels
+				var padding = 20;
+				var ajusteVertical = 50;
+            	var mapBounds = map.getBounds();
+            	var mapPixel = latlngToPixel(mapBounds.getNorthEast()); 
+            	var mapEast = mapPixel.x;
+            	var mapNorth = mapPixel.y;
+            	var hintPixel = latlngToPixel(latlng); 
+				var hintWest = hintPixel.x;
+				var hintEast = hintWest + widthPixel; 
+				var hintNorth = hintPixel.y;
+            	var pos = map.fromLatLngToDivPixel(latlng);
+				var sobra = hintEast + padding - mapEast;
+            	if(sobra > 0){
+					pos.x -= sobra;
+					if(hintNorth - ajusteVertical > mapNorth + padding)
+						pos.y -= ajusteVertical;
+					else
+						pos.y += ajusteVertical;
+            	}
+            	
+				posicaoHint = new GControlPosition(G_ANCHOR_TOP_LEFT, new GSize(pos.x, pos.y-20));
+				posicaoHint.apply(hint);
+ 				document.getElementById("msgHint").innerHTML = msg;
+				document.getElementById("divHint").style.visibility = "visible";
+			}
+
+			function removeHint(){
+				document.getElementById("divHint").style.visibility = "hidden";
+				document.getElementById("msgHint").innerHTML = "";
+			}
+
+			/* ]]> */
+	</script>
+
+	<style>
+	#divHint{
+		position: absolute;				
+		text-align: left;
+		padding: 1em;				
+		z-index: 100;				
+		-moz-opacity:0.85;
+		filter: alpha(opacity=85);
+		color: #000000;
+		font-family: helvetica,verdana,sans;
+		font-size: 14px;
+		visibility: hidden;
+	}
+			
+	</style>
+	<div id="divHint" >
+		<rich:panel id="panelHint" style="border-color:black; border-width: 1px; background-color:#FFFF99">			
+				<span id="msgHint">
+					
+				</span>
+		</rich:panel>
+	</div>
+
+</html>

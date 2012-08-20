@@ -1,0 +1,1110 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC
+"-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:c="http://java.sun.com/jstl/core"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:t="http://myfaces.apache.org/tomahawk"
+	xmlns:rich="http://richfaces.org/rich"
+	xmlns:a4j="http://richfaces.org/a4j">
+
+<head>
+
+<meta http-equiv="Cache-Control" content="no-store" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+
+<script type="text/javascript"
+	src="http://www.google.com/jsapi?key=ABQIAAAAg4v-Pz31X7RpxlFPsEIYsRTFxkwrVf99uCE-DFDYzwuulB3IQBTEtjQzYCPUvNslNNQOJKHac-ipqw"></script>
+
+<script type="text/javascript" src="./scripts/gfeedfetcher.js"></script>
+
+<script type="text/javascript" src="./scripts/gajaxticker.js"></script>
+
+<script type="text/javascript" src="./scripts/util.js"></script>
+<script type="text/javascript" src="./scripts/calendar.js"></script>
+<script type="text/javascript" src="./scripts/calendar-setup.js"></script>
+<script type="text/javascript" src="./scripts/googleClusterer.js"></script>
+<script type="text/javascript" src="./scripts/lang/calendar-en.js"></script>
+<script type="text/javascript"
+	src="./scripts/lang/#{messages['webapp.calendar']}"></script>
+<c:if test="#{messages['webapp.calendar'] == 'calendar-pt.js' }">
+	<script type="text/javascript" src="./scripts/lang/calendar-br.js"></script>
+</c:if>
+<style>
+
+#mascaraFiltro {
+  position:fixed;
+  width: 100%;
+  height: 100%;
+  left:0px;
+  top:0px;
+  z-index: 50;
+  background-color:#000;
+  opacity: .2;
+  filter: alpha(opacity=20);
+  display:none;
+}
+
+#brancoFiltro {
+	width: 500px;
+	height: 500px;
+	position: fixed;
+	left:0px;
+    top:0px;
+	background-color:#FFF;
+	z-index: 60;
+	display: none;
+}
+
+#modalFiltro
+{	
+	
+   	left:0px;
+    top: 0px;
+	display: none;
+    position: fixed;	
+	z-index: 61;
+}
+
+#xfechaFiltro{
+	position:absolute;
+	z-index: 120;
+	width: 29px;
+	height: 29px;
+topo_dirFiltro{
+	width:12px;
+	height: 12px;
+	background-image:url(./images/bg_modal_top_dir.png);
+	background-repeat:no-repeat;
+	float:left;
+}
+
+#corpo_esqFiltro{
+	width:12px;
+	background-image:url(./images/bg_modal_esq.png);
+	background-repeat:repeat-y;
+	float:left;
+}
+
+#corpo_meioFiltro{
+	
+	background-color: #FFF;
+	float:left;
+}
+
+
+#corpo_dirFiltro{
+	width:12px;
+	background-image:url(./images/bg_modal_dir.png);
+	background-repeat:repeat-y;
+	float:left;
+}
+
+#bottom_esqFiltro{
+	width:12px;
+	height: 12px;
+	background-image:url(./images/bg_modal_bottom_esq.png);
+	background-repeat:no-repeat;
+	float:left;
+}
+
+#bottom_meioFiltro{
+	
+	height: 12px;
+	background-image:url(./images/bg_modal_bottom.png);
+	background-repeat:repeat-x;
+	float:left;
+}
+
+#bottom_dirFiltro{
+	width:12px;
+	height: 12px;
+	background-image:url(./images/bg_modal_bottom_dir.png);
+	background-repeat:no-repeat;
+	float:left;
+}	position: absolute;
+	right:-5px;
+	top: -5px;
+}
+
+#topo_esqFiltro{
+	width:12px;
+	height: 12px;
+	background-image:url(./images/bg_modal_top_esq.png);
+	background-repeat:no-repeat;
+	float:left;
+}
+
+
+#topo_meioFiltro{
+	height: 12px;
+	background-image:url(./images/bg_modal_top.png);
+	background-repeat:repeat-x;
+	float:left;
+}
+
+
+#topo_dirFiltro{
+	width:12px;
+	height: 12px;
+	background-image:url(./images/bg_modal_top_dir.png);
+	background-repeat:no-repeat;
+	float:left;
+}
+
+#corpo_esqFiltro{
+	width:12px;
+	background-image:url(./images/bg_modal_esq.png);
+	background-repeat:repeat-y;
+	float:left;
+}
+
+#corpo_meioFiltro{
+	
+	background-color: #FFF;
+	float:left;
+}
+
+
+#corpo_dirFiltro{
+	width:12px;
+	background-image:url(./images/bg_modal_dir.png);
+	background-repeat:repeat-y;
+	float:left;
+}
+
+#bottom_esqFiltro{
+	width:12px;
+	height: 12px;
+	background-image:url(./images/bg_modal_bottom_esq.png);
+	background-repeat:no-repeat;
+	float:left;
+}
+
+#bottom_meioFiltro{
+	
+	height: 12px;
+	background-image:url(./images/bg_modal_bottom.png);
+	background-repeat:repeat-x;
+	float:left;
+}
+
+#bottom_dirFiltro{
+	width:12px;
+	height: 12px;
+	background-image:url(./images/bg_modal_bottom_dir.png);
+	background-repeat:no-repeat;
+	float:left;
+}
+
+#divTelaFiltro {
+	/*position: absolute;
+	top: -300px;
+	left: 36%;
+	text-align: center;
+	margin-left: auto;
+	margin-right: auto;
+	z-index: 99;
+	opacity: .95;
+	-moz-opacity: 0.95;
+	filter: alpha(opacity = 95);
+	color: #000000;
+	font-family: helvetica, verdana, sans;
+	font-size: 12px;
+	visibility: hidden;
+	background-color: #ffffff;*/
+}
+#divTelaKML {
+	position: absolute;
+	top: 212px;
+	left: 36%;
+	text-align: center;
+	margin-left: auto;
+	margin-right: auto;
+	z-index: 99;
+	opacity: .95;
+	-moz-opacity: 0.95;
+	filter: alpha(opacity = 95);
+	color: #000000;
+	font-family: helvetica, verdana, sans;
+	font-size: 12px;
+	visibility: hidden;
+	background-color: #ffffff;
+}
+
+</style>
+<script type="text/javascript">
+        /* <![CDATA[ */
+          	
+          	var kml
+			var linhas;
+		    var query = location.search.substring(1);
+	  		var pairs = query.split("&");
+	  		var temhash = location.hash;
+	  		var idconf;
+	  		var eventId;
+	  		var eventType;
+	  		var id;
+	  		var idRelato;
+	  		var i=0;
+	  		var totalCrimes;
+	  		var markers = [];
+   			var tempDataMaisAntiga= new Date();
+   			var dataMaisAntiga;
+            var tipoCrime; 
+		    var tipoVitima;
+			var tipoLocal;
+			var dataInicial;
+			var dataFinal;
+			var horarioInicial; 
+			var horarioFinal; 
+			var entidadeCertificadora;
+			var confirmadosPositivamente;
+			var http_request = null;
+			var submeteu=true;
+			var isUpdatingMap=false;
+			
+	  		for (var i=0;i<pairs.length;i++) {
+				var pos = pairs[i].indexOf("=");
+				var argname = pairs[i].substring(0,pos).toLowerCase();
+				var value = pairs[i].substring(pos+1).toLowerCase();
+				if (argname == "idcrime") {
+	  				if (temhash == "") {
+	  					
+	  					id = unescape(value);
+	  					id = id.toUpperCase();
+	  				}
+	  			}
+	  			if(argname == "idrelato"){
+					if(temhash == ""){
+						idRelato = unescape(value);
+						idRelato = idRelato.toUpperCase();
+					}	
+	  			}	
+		  		if (argname == "idconf") {idconf = unescape(value);}
+			}
+        
+        	var tpCrimes = [ 
+        			{id:3, nome:'Furto'},
+					{id:4, nome:'Roubo'},
+					{id:2, nome:'Tentativa de Furto'},
+					{id:1, nome:'Tentativa de Roubo'},
+					{id:5, nome:'Violência'} 
+			];
+        	
+        	var tpVitimaPrimLinha = {
+					0:'#{messages["filtro.option.todosTipos"]}'
+			};
+        	
+        	var tpVitima = {
+					0:'#{messages["filtro.option.todosTipos"]}',
+					1:'#{messages["filtro.option.pessoa"]}',
+					2:'#{messages["filtro.option.propriedade"]}'
+			};
+			
+			var tpVitimaViolencia = {
+					0:'#{messages["filtro.option.todosTipos"]}',
+					3:'#{messages["filtro.option.rixasBrigas"]}',
+					4:'#{messages["filtro.option.violenciaDomestica"]}',
+					5:'#{messages["filtro.option.abusoAutoridade"]}',
+					6:'#{messages["filtro.option.homicidio"]}',
+					7:'#{messages["filtro.option.tentativa.homicidio"]}',
+					8:'#{messages["filtro.option.latrocinio"]}',
+					9:'#{messages["filtro.option.atentadoaopudor"]}'	
+			};
+			
+			var tpLocalPrimLinha = {
+					0:'#{messages["filtro.option.todosLocais"]}'
+			};
+			
+			var tpLocalPessoa = {
+					0:'#{messages["filtro.option.todosLocais"]}',
+					1:'#{messages["filtro.option.viaPublica"]}',
+					2:'#{messages["filtro.option.dentroVeiculo"]}',
+					3:'#{messages["filtro.option.estabComercial"]}',
+					4:'#{messages["filtro.option.residencia"]}',
+					5:'#{messages["filtro.option.escola"]}',
+					6:'#{messages["filtro.option.outros"]}'
+			};
+			
+			var tpLocalResidencia = {
+					0:'#{messages["filtro.option.todasPropriedades"]}',
+					7:'#{messages["filtro.option.residencia"]}',
+					8:'#{messages["filtro.option.banco"]}',
+					17:'#{messages["tipolocalpropriedade.carga"]}',
+					9:'#{messages["filtro.option.farmacia"]}',
+					10:'#{messages["filtro.option.postoGasolina"]}',
+					11:'#{messages["filtro.option.loterica"]}',
+					12:'#{messages["filtro.option.veiculo"]}',
+					15:'#{messages["filtro.option.outros"]}'
+					
+			};
+			
+			function makeTipoVitima() {
+				dwr.util.removeAllOptions('tipoVitimaNew');
+				var tpCrimeId = dwr.util.getValue('tipoCrime');
+				if (tpCrimeId == 0) {
+					dwr.util.addOptions('tipoVitimaNew', tpVitimaPrimLinha);
+				}
+				else if (tpCrimeId == 5) {
+					dwr.util.addOptions('tipoVitimaNew', tpVitimaViolencia);
+				}
+				else {
+					dwr.util.addOptions('tipoVitimaNew', tpVitima);
+				}
+
+				dwr.util.setValue('tipoVitimaNew', 0);
+			}
+			
+			function makeTipoLocal() {
+				dwr.util.removeAllOptions('tipoLocalNew');
+				var tpVitimaId = dwr.util.getValue('tipoVitimaNew');
+				if (tpVitimaId == 1) {
+					dwr.util.addOptions('tipoLocalNew', tpLocalPessoa);
+					$('tipoLocalNew').style.display = 'inline';
+				}
+				else if (tpVitimaId == 2) {
+					dwr.util.addOptions('tipoLocalNew', tpLocalResidencia);
+					$('tipoLocalNew').style.display = 'inline';
+				}
+				else {
+					dwr.util.addOptions('tipoLocalNew', tpLocalPrimLinha);
+					$('tipoLocalNew').style.display = 'inline';
+				}
+			}
+			
+			function changeTipoVitima() {
+				makeTipoVitima();
+				dwr.util.setValue('tipoVitima', 0);
+				dwr.util.setValue('tipoVitimaNew', 0);
+				changeTipoLocal(); 
+			}
+			
+			function changeTipoLocal() {
+				makeTipoLocal();				
+				dwr.util.setValue('tipoLocal', 0);
+				dwr.util.setValue('tipoLocalNew', 0);
+			}
+			
+			function makeCombos() {
+				makeTipoVitima();
+				var tv = '#{filtroForm.tipoVitima}';
+				if (!isEmptyStr(tv))
+					dwr.util.setValue('tipoVitimaNew', tv); 
+				else
+					dwr.util.setValue('tipoVitimaNew', 0);
+				
+				makeTipoLocal();
+				var tl = '#{filtroForm.tipoLocal}';
+				if (!isEmptyStr(tl))
+					dwr.util.setValue('tipoLocalNew', tl);
+				else
+					dwr.util.setValue('tipoLocalNew', 0);
+			}
+								
+			function isEmptyStr(str) {
+				if (str.match(/^\s*$/))
+					return true;
+				else
+					return false;
+			}
+			function getUserMapConfig(){
+				document.getElementById("filtroForm:zoomMapa").value=map.getZoom();
+				document.getElementById("filtroForm:latMapa").value=map.getCenter().lat();
+				document.getElementById("filtroForm:lngMapa").value=map.getCenter().lng();
+				limpaTela=true;
+				filtrou=true;
+
+			}
+			
+			function validaPeriodoData(){
+			 	var inicio              = document.getElementById("dataInicial").value.split("/");
+                            var fim                 = document.getElementById("dataFinal").value.split("/");
+				if (inicio == "" & fim == "")
+					return true;
+                            var mesInicio   = ( inicio[2] * 12 + inicio[1] );
+                            var mesFim              = ( fim[2] * 12 + fim[1] );
+
+                            var diferenca   = ( mesFim - mesInicio );
+                            var periodo             = diferenca + 1
+                            if (periodo <= 0) {
+                            	alert('ATENCAO: A data de inicio e maior que a data final!');
+ 	                                return false;
+                            }
+                            else return true;
+
+			}
+			
+			function isNenhumCrimeEncontrado(){
+					
+		 		if (linhas){
+		 			if (linhas.length == 1 || linhas.length==0) {
+		 					return true;
+		 			}
+		 		}
+		 		return false;
+			}
+
+			function limpaDataInicial(){
+				document.getElementById("dataInicial").value = "";
+			}
+
+			function limpaDataFinal(){
+				document.getElementById("dataFinal").value = "";
+			}	
+		
+			function limpaFiltro (){
+				if (map) {
+					qtd_roubos = 0;
+					qtd_furtos = 0;
+					qtd_outros = 0;
+					qtd_denuncias = 0;
+					zeraArrayCrimes();
+					map.clearOverlays();
+					/*DEBUG*/console.log("limpa crimesAtuais");
+					crimesAtuais = {}							
+					
+				}
+			}
+
+			function removerKML(){
+
+				map.removeOverlay(kml);
+			}
+
+			
+			function processaKML(){
+				var url = document.getElementById("urlkml").value;
+				 kml = new GGeoXml(url);
+				map.addOverlay(kml);				
+			}
+		/* ]]> */
+        </script>
+</head>
+
+<body>
+
+
+<f:loadBundle var="messages" basename="messages" />
+<h:panelGrid border="0" columns="1" cellpadding="0" cellspacing="0">
+
+	<h:form id="filtroForm">
+
+		<t:inputHidden id="tipoLocal" forceId="true"
+			value="#{filtroForm.tipoLocal}" />
+		<t:inputHidden id="tipoVitima" forceId="true"
+			value="#{filtroForm.tipoVitima}" />
+		<h:inputHidden id="zoomMapa" value="#{filtroForm.zoomMapa}" />
+		<h:inputHidden id="latMapa" value="#{filtroForm.latMapa}" />
+		<h:inputHidden id="lngMapa" value="#{filtroForm.lngMapa}" />
+
+		<div id="divTelaKML"><!-- KML--> 
+		<rich:panel style="width:300px"
+			id="panelKML" header="#{messages['titulo.kml']}">
+			<t:panelGrid border="0" columns="1" cellpadding="1" cellspacing="1"
+				style="margin:0px;text-align:left;align:left">
+			<table>
+				<tr>
+					<td>
+					#{messages['kml.parte1']}
+				<a href="http://pt.wikipedia.org/wiki/Keyhole_Markup_Language"> KML </a>
+				#{messages['kml.parte2']}
+					</td>
+				</tr>
+			</table>
+				<br/>
+				<h:outputText value="URL:" />
+					<t:inputText style="width:90%" id="urlkml" 
+						forceId="true" value="#{filtroForm.urlKML}"/>
+				<br/>
+			</t:panelGrid>
+
+			<h:panelGrid border="0" columns="3">
+				<a4j:commandButton value="Inserir" id="btnInserir"
+					styleClass="button"
+					onclick="document.getElementById('divTelaKML').style.visibility = 'hidden'; processaKML(); selecionarComando(map, 'mao');" />
+
+				<a4j:commandButton value="Remover" id="btnRemover"
+					styleClass="button"
+					onclick="document.getElementById('divTelaKML').style.visibility = 'hidden'; removerKML(); selecionarComando(map, 'mao');" />
+
+				<a4j:commandButton value="#{messages['faleconosco.cancelar']}"
+					id="btnCancelarKML"
+					onclick="document.getElementById('divTelaKML').style.visibility = 'hidden';selecionarComando(map, 'mao'); return false;"
+					styleClass="button" />
+			</h:panelGrid>
+		</rich:panel></div>
+
+		<div id="mascaraFiltro" onclick="closeModalFiltro('modalFiltro')">&nbsp;</div>
+		<div id="brancoFiltro">&nbsp;</div>
+		<div id="modalFiltro">
+			<div id="xfechaFiltro"><a onclick="closeModalFiltro('modalFiltro')" style = "cursor: pointer;"><img border="0" src="./images/bt_modal_fechar.png" width="29" height="29" /></a></div>
+			<div id="modal_cimaFiltro">
+	    		<div id="topo_esqFiltro">&nbsp;</div>
+	       		<div id="topo_meioFiltro">&nbsp;</div>
+	       		<div id="topo_dirFiltro">&nbsp;</div>
+		   </div>
+		   <div id="modal_corpoFiltro">
+		   	<div id="corpo_esqFiltro">&nbsp;</div>
+		       <div id="corpo_meioFiltro">
+		       <!-- Aqui pode ser colocado o conteúdo -->
+		      	<div id = "divTituloFiltro" style="left: 0;"></div>
+		 		<div id = "divTelaFiltro" style="margin-left: 15px;">
+						<div><h1></h1></div>
+						<t:panelGrid border="0" columns="2" cellpadding="1" cellspacing="1"
+							style="margin:0px;text-align:left;align:left">
+							<t:panelGroup colspan="2">
+								<h:outputText
+									value="#{messages['estatisticas.area.visivel.tipo.crime']}:" />
+							</t:panelGroup>
+							<t:selectOneMenu style="font-size:10px;"
+								value="#{filtroForm.tipoCrime}" required="false" id="tipoCrime"
+								forceId="true" onchange="changeTipoVitima();">
+								<f:selectItem itemLabel="#{messages['filtro.option.todosCrimes']}"
+									itemValue="0" />
+								<f:selectItem itemLabel="#{messages['filtro.option.furto']}"
+									itemValue="3" />
+								<f:selectItem itemLabel="#{messages['filtro.option.roubo']}"
+									itemValue="4" />
+								<f:selectItem
+									itemLabel="#{messages['filtro.option.tentativaFurto']}"
+									itemValue="2" />
+								<f:selectItem
+									itemLabel="#{messages['filtro.option.tentativaRoubo']}"
+									itemValue="1" />
+								<f:selectItem itemLabel="#{messages['filtro.option.violencia']}"
+									itemValue="5" />
+							</t:selectOneMenu>
+							<h:panelGroup border="0">
+								<select style="font-size: 10px;" id="tipoVitimaNew"
+									onchange="dwr.util.setValue('tipoVitima', dwr.util.getValue(this.id)); changeTipoLocal();">
+								</select>
+							</h:panelGroup>
+							<t:panelGroup colspan="2">
+								<h:outputText
+									value="#{messages['estatisticas.area.visivel.tipo.local']}:" />
+							</t:panelGroup>
+							<t:panelGroup colspan="2" border="0">
+								<select style="font-size: 10px;" id="tipoLocalNew"
+									onchange="dwr.util.setValue('tipoLocal', dwr.util.getValue(this.id));">
+								</select>
+							</t:panelGroup>
+						</t:panelGrid>
+						<t:panelGrid border="0" columns="3" cellpadding="1" cellspacing="1"
+							style="margin:0px;text-align:left;align:left">
+							<t:panelGroup colspan="3">
+								<h:outputText value="#{messages['crime.filtro.periodo']}:"
+									style="font-size:11px;" />
+							</t:panelGroup>
+							<h:outputText
+								value="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" />
+			
+							<h:panelGroup border="0">
+								<t:inputText id="dataInicial" onkeyup="limpaDataInicial();"
+									forceId="true" value="#{filtroForm.dataInicial}"
+									style="font-size:10px;" size="10">
+									<f:converter
+										converterId="wikicrimes.WikiSearchCrimesDataConverter" />
+								</t:inputText>
+								<t:graphicImage id="triggerINI" forceId="true"
+									value="/images/btns/btnCalendar.gif"
+									style="display:inline; cursor:pointer;" />
+								<h:outputText value="#{messages['filtro.label.acrase']}"
+									style="font-size:11px;" />
+							</h:panelGroup>
+							<h:panelGroup border="0">
+								<t:inputText id="dataFinal" forceId="true"
+									onkeyup="limpaDataFinal();" value="#{filtroForm.dataFinal}"
+									style="font-size:10px;" size="10">
+									<f:converter
+										converterId="wikicrimes.WikiSearchCrimesDataConverter" />
+								</t:inputText>
+								<t:graphicImage id="triggerDF" forceId="true"
+									value="/images/btns/btnCalendar.gif"
+									style="display:inline; cursor:pointer;" />
+							</h:panelGroup>
+						</t:panelGrid>
+			
+						<!-- Filtros Avan�ados -->
+						<t:panelGrid border="0" columns="3" cellpadding="1" cellspacing="1"
+							style="margin:0px;text-align:left;align:left">
+							<t:panelGroup colspan="3">
+								<h:outputText value="#{messages['crime.filtro.horario']}:"
+									style="font-size:11px;" />
+							</t:panelGroup>
+			
+							<h:outputText
+								value="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" />
+							<h:panelGroup border="0">
+								<h:selectOneMenu value="#{filtroForm.horarioInicial}"
+									style="font-size:10px;" id="horarioInicial">
+									<f:selectItem itemLabel="#{messages['filtro.btn.qualquer']}"
+										itemValue="-1" />
+									<f:selectItems value="#{filtroForm.horarioItens}" />
+								</h:selectOneMenu>
+			
+								<h:outputText value="#{messages['filtro.label.acrase']}"
+									style="font-size:11px;" />
+							</h:panelGroup>
+							<h:selectOneMenu value="#{filtroForm.horarioFinal}"
+								style="font-size:10px; " id="horarioFinal">
+								<f:selectItem itemLabel="#{messages['filtro.btn.qualquer']}"
+									itemValue="-1" />
+								<f:selectItems value="#{filtroForm.horarioItens}" />
+							</h:selectOneMenu>
+						</t:panelGrid>
+			
+						<t:panelGrid border="0" cellpadding="1" cellspacing="1" 
+							style="margin:0px;text-align:left;align:left">
+							
+							<h:outputText value="#{messages['crime.credibilidade.nivel']}"
+								style="vertical-align: text-top; font-size:11px;" />
+								
+							<h:panelGrid columns="3" border="0">
+								<h:outputText value="#{messages['crime.credibilidade.nivel.inicial']}: "
+									style="vertical-align: text-top; font-size:11px;" />
+								
+								<rich:inputNumberSlider id="idCredInicial" value="#{filtroForm.credibilidadeInicial}" 
+									minValue="0" maxValue="100" step="1" showInput="false">
+									<a4j:support event="onchange" reRender="idCredFinal,idValorCredInic,idValorCredFinal"/>
+								</rich:inputNumberSlider>
+								
+								<h:outputText id="idValorCredInic" value="#{filtroForm.credibilidadeInicial}%"/>
+								
+								<h:outputText value="#{messages['crime.credibilidade.nivel.final']}: "
+									style="vertical-align: text-top; font-size:11px;" />
+								
+								<rich:inputNumberSlider id="idCredFinal" value="#{filtroForm.credibilidadeFinal}" 
+									minValue="#{filtroForm.credibilidadeInicial}" maxValue="100" step="1" showInput="false">
+									<a4j:support event="onchange" reRender="idValorCredFinal"/>
+								</rich:inputNumberSlider>
+								
+								<h:outputText id="idValorCredFinal" value="#{filtroForm.credibilidadeFinal}%"/>
+							</h:panelGrid>
+							
+						</t:panelGrid>
+						
+			
+						<t:panelGrid border="0" cellpadding="1" cellspacing="1"
+							style="margin:0px;text-align:left;align:left">
+							<h:outputText value="#{messages['crime.filtro.certificacao']}:"
+								style="vertical-align: text-top; font-size:11px;" />
+							<h:panelGrid border="0" columns="2" cellpadding="0" cellspacing="0">
+			
+								<h:selectBooleanCheckbox
+									value="#{filtroForm.crimeConfirmadoPositivamente}"
+									id="crimeConfirmadoPositivamente" style="font-size:11px;">
+								</h:selectBooleanCheckbox>
+			
+								<h:outputText
+									value="#{messages['crime.filtro.option.certificadoPositivamente']}"
+									style="font-size:10px;" />
+			
+								<h:selectBooleanCheckbox id="crimeConfirmadoEntidadeCertificadora"
+									value="#{filtroForm.crimeConfirmadoEntCer}"
+									style="font-size:11px;"
+									onclick="habilitaListaEntidadeCertificadora();">
+								</h:selectBooleanCheckbox>
+			
+								<h:outputText
+									value="#{messages['crime.filtro.option.entidadeCertificadora']}"
+									style="font-size:10px;" />
+							</h:panelGrid>
+							<h:selectOneMenu style="font-size:10px"
+								value="#{filtroForm.entidadeCertificadora}"
+								id="entidadeCertificadora">
+								<f:selectItems value="#{filtroForm.entidadeCertificadoraItens}" />
+							</h:selectOneMenu>
+							<!-- FIM Filtro por n�vel de confiabilidade  -->
+							<!-- Inser��o de um c�digo javaScript para resolu��o dos problemas com a propriedade disable do componente "selectOneMenu"-->
+							<script type="text/javascript">
+										
+											var isEntidadeCertificadoraSelecionada = document.getElementById("filtroForm:crimeConfirmadoEntidadeCertificadora").checked;
+											if(isEntidadeCertificadoraSelecionada == false) {
+												document.getElementById("filtroForm:entidadeCertificadora").disabled = true;
+												document.getElementById("filtroForm:entidadeCertificadora").itemValue = "";
+												}
+										</script>
+							<!-- update vazio somente para gravar na sessao os parametros do mapa (lat,lng,zoom) -->
+						</t:panelGrid>
+			
+						<h:panelGrid border="0" columns="2">
+							<a4j:commandButton value="#{messages['filtro.btn.atualizar']}"
+								id="btnAtualizar" action="#{filtroForm.update}" styleClass="button"
+								onclick="esconderFiltro();selecionarComando(map, 'mao'); getUserMapConfig(); setaSubmeteuFiltro();atualizaMapa();" />
+			
+							<a4j:commandButton value="#{messages['faleconosco.cancelar']}"
+								id="btnCancelar"
+								onclick="esconderFiltro();selecionarComando(map, 'mao');//comentado pq esse era o limpar filtro. limpaUrl();limpaFiltro(); return false;"
+								styleClass="button" />
+						</h:panelGrid>
+		 		
+		 		</div>
+		       <!-- Aqui pode ser colocado o conteúdo -->
+		       </div>
+		       <div id="corpo_dirFiltro">&nbsp;</div>
+			</div>
+			<div id="modal_bottomFiltro">
+		  		<div id="bottom_esqFiltro">&nbsp;</div>
+		       	<div id="bottom_meioFiltro">&nbsp;</div>
+		       	<div id="bottom_dirFiltro">&nbsp;</div>
+			</div>      	   
+		</div>    	   
+			
+		<!-- Fim da Pesquisa -->
+		<table border="0" style="margin-left:0; position: absolute; left: 0;">
+			<tr>
+				<td>
+					<table style="margin-top: 10px; height: 352px; width: 500px;">
+						<tr>
+							<td colspan="2" style=""><p class="toptitulo">Videos Wikicrimes</p><hr style="border: 0; border-top: 2px #A9A9A9 dotted;" />
+							</td>
+						</tr>
+						<tr>
+						<td valign="top">
+						<div id="videodiv" style="margin-left:20px; padding-top: 7px;">
+							<div id="verVideo" style="width: 160; height: 40;">
+								<img width="200" height="160" style="cursor: pointer" src="./images/video.png" />
+							</div>
+						<div style="padding-top: 5px; max-width: 200px;">
+							<h:outputText style="font-size:12px;" value="#{messages['video.titulo1']}" />
+						</div>
+						</div>
+						</td>
+						<td valign="top">
+						<div id="videodiv2" style="margin-right:20px;padding-top: 7px;">
+						<div id="verVideo2" style="width: 160; height: 40;">
+						<img width="200" height="160" style="cursor: pointer" src="./images/vasconoted3.png" />
+						</div>
+						<div style="padding-top: 5px; max-width: 200px;" >
+							<h:outputText style="font-size:12px" value="#{messages['video.titulo2']}" />
+						</div>
+					</div></td></tr></table>	
+				</td>
+				<td width="10px">&nsbp;</td>
+				<td width="478px">
+                      <table style="margin-top: 10px; width: 478px;">
+                            <tr>
+                            	<td valign="top"><p class="toptitulo">#{messages['modal.wikicrimes.mobile']}</p><hr style="border: 0; border-top: 2px #A9A9A9 dotted;" /></td>
+                            </tr>
+                            <tr>
+                            	<td>
+                                	<div style="text-align:center;">
+										<p style="min-height: 35px;"><h:outputText style="font-size:14px;" value="#{messages['modal.wikicrimes.mobile.msg']}" /></p>
+										<div style="width:200px; float:left; margin-left: 20px;">
+											<img src="./images/icones_sites/iphone.jpg"/><br/>
+											<a target="_BLANK" href="http://itunes.apple.com/br/app/wikicrimes/id399776422?mt=8">
+												<img height="48px" src="./images/icones_sites/wikicrimes.png"/>
+											</a>
+											<a target="_BLANK" href="http://itunes.apple.com/br/app/wikicrimes-opengov-sp/id473055780?mt=8">
+												<img height="48px" src="./images/icones_sites/opengov.png"/>
+											</a>
+										</div>
+										
+										<div style="width:200px; float:left; margin-left: 20px;">
+											<img style="margin-bottom:10px;" src="./images/icones_sites/android.gif"/><br/>
+											<a target="_BLANK" href="https://market.android.com/details?id=org.wikicrimes">
+												<img height="48px" src="./images/icones_sites/wikicrimes.png"/>
+											</a>
+											<a target="_BLANK" href="https://market.android.com/details?id=br.com.wikinova.wikicrimes">
+												<img height="48px" src="./images/icones_sites/opengov.png"/>
+											</a>
+										</div>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<td style="">
+										<div style="height: 100%; min-height: 72px;"><p style="text-align:justify"><h:outputText style="font-size:12px" value="#{messages['modal.wikicrimes.mobile.msg.explicacao']}" /></p></div>
+                       			</td>
+                       		</tr>
+                      		
+                      </table>
+				</td>
+			</tr>
+		</table>
+
+		<script type="text/javascript"><!--
+		/*	<![CDATA[ */	   
+				
+				/*Link do download do mobile*/
+				function mostraDivBaixarWikicrimesMobile(){
+					//mostrarCarregandoPequeno();
+					document.getElementById("formReRenderLogin:btLoginSubmit").click();
+					closeMessage();
+					window.open("./paginaDownloadWikiMobile.html");
+				}
+					
+				makeCombos();
+				
+				function verificaFiltrosAplicados()
+				{
+					var filtrosHtml = "";
+
+					// Sempre existira pelo menos um filtro aplicado (Credibilidade)
+					filtrosHtml = "<span style='cursor: pointer; color:black;' title='"+ document.getElementById("filtroForm:idValorCredInic").innerHTML +" #{messages['estatisticas.area.visivel.credibilidade.periodo']} "+ document.getElementById("filtroForm:idValorCredFinal").innerHTML +"'> #{messages['scheduler.titulo.credibilidade']},</span>";
+					
+					if(document.getElementById("tipoCrime").value!=0)
+					{
+						var textoHint = "";
+						if(document.getElementById("tipoCrime").value==1)
+							textoHint ="#{messages['tipocrime.tentativaderoubo']}";
+						if(document.getElementById("tipoCrime").value==2)
+							textoHint ="#{messages['tipocrime.tentativadefurto']}";
+						if(document.getElementById("tipoCrime").value==3)
+							textoHint ="#{messages['tipocrime.furto']}";
+						if(document.getElementById("tipoCrime").value==4)
+							textoHint ="#{messages['tipocrime.roubo']}";
+						if(document.getElementById("tipoCrime").value==5)
+							textoHint ="#{messages['tipocrime.violencia']}";			
+
+						filtrosHtml+=" <span title='"+textoHint+"'>#{messages['estatisticas.area.visivel.tipo.crime']}</span>,";
+
+						if(document.getElementById("tipoVitima").value!=0)
+						{
+							filtrosHtml+="<span> #{messages['estatisticas.area.visivel.subtipo.crime']}</span>,"
+
+							if(tipoLocal = document.getElementById("tipoLocal").value!=0){
+								filtrosHtml+="<span> #{messages['estatisticas.area.visivel.tipo.local']}</span>,"
+							}
+						}
+					}
+					if(document.getElementById("dataInicial").value!='' || document.getElementById("dataFinal").value!=''){
+						filtrosHtml+=" <span style='cursor: pointer; color:black;' title='"+document.getElementById("dataInicial").value+" #{messages['estatisticas.area.visivel.data.periodo']} "+document.getElementById("dataFinal").value+"'>#{messages['scheduler.titulo.data']},</span>";
+					}
+					if(document.getElementById("filtroForm:horarioInicial").value!=-1 && document.getElementById("filtroForm:horarioFinal").value!=-1){
+						filtrosHtml+=" <span style='cursor: pointer; color:black;' title='"+document.getElementById("filtroForm:horarioInicial").value+":00 #{messages['estatisticas.area.visivel.horario.periodo']} "+document.getElementById("filtroForm:horarioFinal").value+":00'>#{messages['scheduler.titulo.horario']},</span>";
+					}
+					filtrosHtml= filtrosHtml.substring(0,filtrosHtml.length-8)+"</span>";
+
+					document.getElementById('divFiltrosAplicados').innerHTML = filtrosHtml;
+				}
+				
+				function atualizaMapa(){
+					if(isUpdatingMap) return;
+					isUpdatingMap = true;
+					mostrarCarregandoPequeno();
+					verificaFiltrosAplicados();
+					//console.log("atualizaMapa 1");
+					updateStatistics(eventId, eventType);
+					//console.log("atualizaMapa 2");
+					updateStatisticsGUI();
+					updateFilterGUI();
+					if(eventId)
+						centerOnEvent();
+					updateKernelGUI();
+					escondeCarregandoPequeno();
+					document.getElementById("loading").style.visibility='hidden';
+					isUpdatingMap = false;
+				}
+
+				function forceMapUpdate(){
+					isUpdatingMap = false;
+					atualizaMapa();
+				}
+
+				function centerOnEvent(){
+					var center = new GLatLng(statistics.center.lat, statistics.center.lng);
+					map.setCenter(center, zoomLimiteInfMarcadores);
+					var marker = crimesAtuais[eventId];
+					map.addOverlay(marker);
+					showMarkerInfo(marker);
+					eventId = null;
+					eventType = null;
+				}
+
+				function updateStatisticsGUI(){
+					document.getElementById('divQtdeCrimesFiltrados').innerHTML = statistics.totalEvents;
+					document.getElementById('graficoEstatisticasAV').innerHTML="<img title='#{messages['estatisticas.area.visivel.titulo.graf.ocorrencias']}' src='" + statistics.charts.types + "'/>";
+					document.getElementById('graficoRazoesAV').innerHTML="<img title='#{messages['estatisticas.area.visivel.titulo.graf.causas']}' src='" + statistics.charts.reasons + "'/>";
+				}
+				
+				function updateFilterGUI(){
+					if(defaultFilter){
+						document.getElementById("dataInicial").value = statistics.startDate;
+					}
+				}
+
+				function updateKernelGUI(){
+					if(podeMudarModoKernel)
+						if(kernelEnabled){
+							if(mudouZoom && map.getZoom() > zoomLimiteSupKernel){
+								desativaMapaKernel();
+							}else{
+								limpaCrimesAgrupador();
+								apagaMapaKernel();
+								pintaMapaKernel();
+							}
+						}else{
+							if(mudouZoom && map.getZoom() < zoomLimiteInfMarcadores){
+								ativaMapaKernel();
+							}
+						}
+						mudouZoom = false;
+				}
+				
+				// Ler os dados do arquivo texto enviado pelo servidor e constr�i os marcadores de crimes
+				function constroiMarcadores() {
+					var crimes = statistics.events;
+					if(crimes){ 
+						linhas = crimes.split("\n");
+						i=0;
+						plotaMarcadores();
+					}else{
+        	           	document.getElementById("loading").style.visibility='hidden';
+        	           	hideDivComment();
+				 	}
+				}
+				
+
+				function plotaMarcadores() {
+					//*DEBUG*/console.log("plotaMarcadores");
+				   	limpaCrimesOutOfBounds(id, idRelato);
+		      		if (i < linhas.length-1){
+						var keep=Math.min(i + 30000, linhas.length-1);
+						while (i < keep){
+						    var dadosCrimeLinha = linhas[i].split("|");
+					      	var idCrime = dadosCrimeLinha[0];						            	
+					      	var idTipoCrime = dadosCrimeLinha[1];
+					      	var lat = dadosCrimeLinha[2];
+   					   	 	var long = dadosCrimeLinha[3];
+					       	var idCrime2 = dadosCrimeLinha[4];
+					        var dataCrime = dadosCrimeLinha[5];
+					        if(dataCrime != undefined){
+ 						    	var dia=dataCrime.substring(0,2);
+						        var mes = dataCrime.substring(3,5);	
+						        var ano = dataCrime.substring(6,10);
+						        if (!filtrou) {
+	 						    	var tempDataCrime = new Date(ano,mes-1,dia);
+	 						        if (tempDataCrime < tempDataMaisAntiga){
+	 						        	dataMaisAntiga=dataCrime;
+	 						            tempDataMaisAntiga=tempDataCrime;
+	 						        }
+								}
+					        }
+					        if (id==idCrime2)
+					        	id=idCrime;
+					           	if(!crimesAtuais[idCrime])	{
+	  					        	// Cria o marcador
+					            var marcador = createMarkerId(new GLatLng(lat, long),idTipoCrime,idCrime,dataCrime);
+								crimesAtuais[idCrime]=marcador;
+			//*********************** Kernel Map INICIO ****************************
+			//coleta os crimes pra serem mandados pro servlet q gera o mapa de kernel
+			//o if eh pra nao deixar plotar os marcadores qd o mapa de kernel estiver ligado
+								arrayCrimesLatLng[index] = new crimeKernelMap(long, lat, marcador);
+								++index;
+			//*********************** Kernel Map FIM ****************************
+									// Google Agrupadores: Preenchendo Vetor de marcadores
+									map.addOverlay(marcador);
+								}
+					      		i++
+				      		}
+				      		if (document.getElementById("loading")){
+								 var datainicial = document.getElementById("dataInicial").value;
+				      			 var datafinal = document.getElementById("dataFinal").value;
+					      		 document.getElementById("loadingMessage").innerHTML= "#{messages['webapp.carregando.crimes']} "  + i + " #{messages['webapp.carregando.de']} " +  (linhas.length-1) +  "<br/> #{messages['webapp.carregando.periodo']}: " + datainicial + " #{messages['webapp.carregando.a']} " + datafinal;		           				    
+				      		}
+				      		//window.setTimeout(plotaMarcadores,1);			      				
+	      				}else {
+	                		 document.getElementById("loading").style.visibility='hidden';
+	                		 document.getElementById("loadingMessage").innerHTML="#{messages['webapp.carregando.crimes']}".
+	                		 i=0;
+	      				}
+		      			if (!filtrou) {
+		      				document.getElementById("dataInicial").value=dataMaisAntiga;
+		      				verificaFiltrosAplicados();
+		      				dataInicial=dataMaisAntiga.split("/");	
+		      			}
+		      		}						
+				  
+				   function plotaEstados() {
+  	                		 document.getElementById("loading").style.visibility='hidden';   	                		     		 
+  	                		 i=0;
+  	                		 totalCrimes=0;
+			      		while (i < linhas.length-1){
+	      		     		var dadosCrimeLinha = linhas[i].split("|");
+			            	var sigla = dadosCrimeLinha[0];
+			            	var qtd = dadosCrimeLinha[1];
+			            	var lat = dadosCrimeLinha[2];
+ 					           	var long = dadosCrimeLinha[3];
+
+ 					           	totalCrimes+=parseInt(qtd);
+ 					                  // Cria o marcador
+			                var marcador = createMarkerGroup(new GLatLng(lat, long),sigla + ' (' + qtd + ')');
+							      	// Adiciona o marcador ao mapa
+							
+					      	i++
+					     }        	                	
+		      		}
+
+					function setaSubmeteuFiltro(){
+						submeteu = true;
+						defaultFilter = false;
+					}	
+								      		
+					/*Funcao que habilita/desabilita a lista contendo as entidades certificadoras cadastradas*/
+					function habilitaListaEntidadeCertificadora(){
+						
+						var listaHabilitada = document.getElementById("filtroForm:entidadeCertificadora").disabled;
+						if(listaHabilitada == true){
+							document.getElementById("filtroForm:entidadeCertificadora").disabled = false;
+							document.getElementById("filtroForm:entidadeCertificadora").selectedIndex = 1;
+						}
+						else {
+						 document.getElementById("filtroForm:entidadeCertificadora").disabled = true;
+						 document.getElementById("filtroForm:entidadeCertificadora").selectedIndex = 0;
+
+						}
+						 
+					}
+
+
+				/* ]]> */			
+				--></script>
+	</h:form>
+</h:panelGrid>
+
+<script type="text/javascript">
+		    Calendar.setup(
+		    {
+		      inputField  : "dataInicial",         // ID of the input field
+		      ifFormat    : "#{messages['date.format.calendar']}",    // the date format
+		      button      : "triggerINI",       // ID of the button
+		      weekNumbers : false
+		    }
+		  	);
+		    Calendar.setup(
+		    {
+		      inputField  : "dataFinal",         // ID of the input field
+		      ifFormat    : "#{messages['date.format.calendar']}",    // the date format
+		      button      : "triggerDF",       // ID of the button
+		      weekNumbers : false
+		    }
+		  	);
+</script>
+<script type="text/javascript" src="./scripts/jquery-1.4.2.js"></script>
+<script type="text/javascript" src="http://github.com/malsup/corner/raw/master/jquery.corner.js?v2.09"></script>
+<script type="text/javascript"> 
+			
+		   // animation
+		   jQuery.noConflict();
+				
+		   jQuery('#verVideo').click(function(){
+		   		openModal('./video1.html',470, 375,'#{messages['video.titulo1']}', this)	        	
+		   });
+			
+			jQuery('#verVideo2').click(function(){
+				openModal('./video2.html',470, 375,'#{messages['video.titulo2']}', this)
+		    });
+	
+				
+		</script>
+
+</body>
+</html>

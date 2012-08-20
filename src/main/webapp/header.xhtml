@@ -1,0 +1,292 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:c="http://java.sun.com/jstl/core"
+	xmlns:t="http://myfaces.apache.org/tomahawk"
+	xmlns:rich="http://richfaces.org/rich"
+	xmlns:a4j="http://richfaces.org/a4j">
+
+<head>
+<script type="text/javascript" src="./scripts/modal2.js"></script>
+<link rel="stylesheet" href="./styles/modal2.css" type="text/css" />
+<!--<link rel="stylesheet" href="./styles/modal-message.css" type="text/css" />-->
+<!--<script type="text/javascript" src="./scripts/modal-message.js"></script>-->
+<link rel="alternate" type="application/rss+xml"
+	title="#{messages['rss.titulo']}" href="#{request.contextPath}/rss" />
+</head>
+
+<body>
+<t:panelGroup id="painelPrincipaLoginLogout">
+	<h1 style="font-size: 10px; position: absolute; top: 35px; left: 3px; color: gray; font-family: sans-serif;">#{messages['wikicrimes.slogan']}</h1>
+	<c:if test="#{empty usuario}">
+		
+		<table align="right" cellpadding="1" cellspacing="0" border="0">
+			<tr>
+				<td width="40px"></td>
+				<td><h:outputLink value="#"
+					onclick="mostrarPainelLogin('./login.html');">
+					<h:outputText value="Login" />
+				</h:outputLink> |</td>
+				<td><h:outputLink value="#"
+					onclick="openModal('./registrarUsuario.html', 600, 350,'#{messages['usuario.registrar']}', this);return false;">
+					<h:outputText value="#{messages['usuario.registre']}" />
+				</h:outputLink> |</td>
+				
+				<td >
+					<h:outputLink value="#" onclick="openModal('#{messages['webapp.localAjuda']}', 650, 400,'#{messages['usuario.ajuda']}', this);">
+					<h:outputText value="#{messages['usuario.ajuda']}"
+						title="#{messages['usuario.ajudaWikicrimes']}"/>
+					</h:outputLink>									
+				</td>
+				<td>
+					<a href="#{request.contextPath}/rss" styleClass="estiloImagem">
+					<t:graphicImage url="/images/feed-icon-14x14.png" style="border: 0;"/>								
+					</a>
+				</td>
+
+			</tr>
+			
+
+		</table>
+
+	</c:if>
+	<c:if test="#{not empty usuario}">
+		<h:form>
+
+			<table align="right" border="0" cellspacing="0" cellpadding="1">
+				<tr>
+					<td width="40px"></td>
+
+					<td><h:outputText value="#{usuario.email} " /></td>
+					<td>|</td>
+						<td><h:outputLink value="#"
+						onclick="openModal('./editarPreferencias.html', 650, 400,'#{messages['usuario.conta']}');return false">
+						<h:outputText value=" #{messages['usuario.conta']} "
+							title="#{messages['usuario.conta.hint']}" />
+					</h:outputLink></td>					
+					<td>|</td>
+					  
+					<td><h:outputLink value="#"
+						onclick="openModal('./mostrarReputacao.html', 1000, 488,'#{messages['usuario.reputacao']}');return false">
+						<h:outputText
+							value=" #{messages['usuario.reputacao']} "
+							title="#{messages['usuario.reputacao.hint']}" />
+					</h:outputLink></td>
+					<td>|</td>
+					
+					<td><h:outputLink value="#"
+						onclick="openModal('./listarAreas.html', 420, 200,'#{messages['webapp.area.titulo.minhasareas']}');return false">
+						<h:outputText
+							value=" #{messages['webapp.area.titulo.minhasareas']} "
+							title="#{messages['webapp.area.titulo.minhasareas']}" />
+					</h:outputLink></td>
+					<td>|</td>
+
+					<td><h:outputLink value="#"
+						onclick="openModal('./listarCrimes.html', 800, 350,'#{messages['usuario.denuncias']}');return false">
+						<h:outputText value=" #{messages['usuario.denuncias']} "
+							title="#{messages['usuario.denuncias.hint']}" />
+					</h:outputLink></td>
+					<td>|</td>
+					<td><a4j:commandLink value=" Logout "
+						reRender="pesquisaGenerica, painelPrincipaLoginLogout, divMobile"
+						action="#{usuarioForm.logout}" immediate="true"
+						onclick="onLogout()" /></td>
+				</tr>
+				
+			</table>
+		</h:form>
+
+	</c:if>
+
+
+	<h:form id="formReRenderRegistroCrimes">
+		<a4j:commandButton id="btRegistroCrimeSubmit"
+			reRender="panelRegistroCrime" style="display: none" />
+	</h:form>
+	<h:form id="formReRenderRegistroDenuncia">
+		<a4j:commandButton id="btRegistroDenunciaSubmit"
+			reRender="panelRegistroDenuncia" style="display: none" />
+	</h:form>
+	<h:form id="formDesabilitaTutor">
+		<a4j:commandButton id="btDesabilitaTutor"
+			action="#{filtroForm.desabilitaTutor}" style="display: none" />
+	</h:form>
+	<h:form id="formReRenderLogin">
+		<a4j:commandButton id="btLoginSubmit"
+			reRender="pesquisaGenerica, painelPrincipaLoginLogout,divMobile"
+			style="display: none" />
+	</h:form>
+	<h:form id="formDownloadMobile">
+		<h:commandButton id="btInstrucoesMobile"
+			action="#{usuarioForm.mostraPaginaInstrucoes}" style="display: none" />
+	</h:form>
+
+	<script>
+			/* <![CDATA[ */
+				//div modal
+			    
+				function loginCasoPrecise(tipo, msg){
+					var precisaLogin = #{usuario == null}; 
+					if(precisaLogin)
+						mostrarPainelLogin('./login.html?mensagemLogin=' + msg + '&amp;'+
+								'tipoRegistro='+tipo);
+					return precisaLogin;
+				}
+
+				function onLogout(){
+		//*********************** AREAS RISCO INICIO ****************************
+		//pra esconder as areas de risco do usuario q fez logoff e 
+		//forcar de carregar areas novamente qd o proximo usuario q fizer login 					
+					limparMinhasAreas();
+		//*********************** AREAS RISCO FIM ****************************
+				}
+			
+				function usuarioEstaLogado(){				
+					if(#{usuario != null})
+						return true;
+					else
+						return false;				
+				}
+				function registrarArea1(){ 			
+					if(#{usuario != null}){
+						selecionarComando(map, 'area');
+				  		//document.getElementById("divExplicaMarcarArea").style.visibility = "visible";
+				  		estaRegistrandoArea = true;
+					    startShape();
+					}
+					else{
+						mostrarPainelLogin('./login.html?mensagemLogin=#{messages["usuario.informacao.area"]}&amp;tipoRegistro=3');
+					}
+				}
+
+				function gerarEmbedded(){
+					if(#{usuario != null}){
+						openModal('./geradorEmbedded.html', 900, 510,'#{messages["mapaEmbedded.estado.mapa"]}');
+					}else{
+						mostrarPainelLogin('./login.html');
+					}	
+				}
+
+
+				var comandoControleMao = new ComandoMao();
+				var comandoControleMaoSelecionado = new ComandoMaoSelecionado();
+				var comandoControleMarcadorDeArea = new ComandoMarcadorDeArea();
+				var comandoControleMarcadorDeAreaSelecionado = new ComandoMarcadorDeAreaSelecionado();
+				//var comandoControleEmbed = new ComandoEmbed();	
+				//var comandoControleEmbedSelecionado = new ComandoEmbedSelecionado();
+				var comandoControleFiltro = new ComandoFiltro();	
+				var comandoControleFiltroSelecionado = new ComandoFiltroSelecionado();
+				var comandoControleKernel = new ComandoKernel();
+				var comandoControleKernelSelecionado = new ComandoKernelSelecionado();
+				function selecionarComando(mapa, comando, off){
+
+						//alert('comando: ' + comando + ', off:' + off);
+
+						mapa.removeControl(comandoControleMao);
+						mapa.removeControl(comandoControleMaoSelecionado);
+						mapa.removeControl(comandoControleMarcadorDeArea);
+						mapa.removeControl(comandoControleMarcadorDeAreaSelecionado);
+						//mapa.removeControl(comandoControleEmbed);
+						//mapa.removeControl(comandoControleEmbedSelecionado);
+						mapa.removeControl(comandoControleFiltro);
+						mapa.removeControl(comandoControleFiltroSelecionado);
+						//mapa.removeControl(comandoControleKernel);
+						//mapa.removeControl(comandoControleKernelSelecionado);
+
+					
+						if(comando=='filtro'){					
+							mapa.addControl(comandoControleMarcadorDeArea);
+							mapa.addControl(comandoControleMao);
+							//mapa.addControl(comandoControleKernel);
+							mapa.addControl(comandoControleFiltroSelecionado);
+							if(#{usuario.perfil.nome == 'CERTIFICADOR'}||#{usuario.perfil.nome == 'ADMINISTRADOR'}){
+								if(#{usuario.entidadeCertificadora.idEntidadeCertificadora != 12}){
+									//mapa.addControl(comandoControleEmbed);
+								}	
+							}
+						}
+
+						if(comando=='kernel'){
+							if(off){
+								mapa.removeControl(comandoControleKernelSelecionado);
+								mapa.addControl(comandoControleKernel);
+							}else{
+								mapa.removeControl(comandoControleKernel);
+								mapa.addControl(comandoControleKernelSelecionado);
+							}
+							mapa.addControl(comandoControleMarcadorDeArea);
+							mapa.addControl(comandoControleMao);
+							mapa.addControl(comandoControleFiltro);
+							if(#{usuario.perfil.nome == 'CERTIFICADOR'}||#{usuario.perfil.nome == 'ADMINISTRADOR'}){
+								if(#{usuario.entidadeCertificadora.idEntidadeCertificadora != 12}){
+									//mapa.addControl(comandoControleEmbed);
+								}	
+							}
+						}
+						
+						if(comando=='mao'){											
+							mapa.addControl(comandoControleMarcadorDeArea);
+							mapa.addControl(comandoControleMaoSelecionado);
+							if(!kernelEnabled)
+								mapa.addControl(comandoControleKernel);
+							mapa.addControl(comandoControleFiltro);
+							if(#{usuario.perfil.nome == 'CERTIFICADOR'}||#{usuario.perfil.nome == 'ADMINISTRADOR'}){
+								if(#{usuario.entidadeCertificadora.idEntidadeCertificadora != 12}){
+									//mapa.addControl(comandoControleEmbed);
+								}	
+							}
+						}
+						if(comando == 'area'){
+							document.getElementById("divTelaFiltro").style.visibility = "hidden";					
+							mapa.addControl(comandoControleMarcadorDeAreaSelecionado);
+							mapa.addControl(comandoControleMao);
+							//mapa.addControl(comandoControleKernel);
+							mapa.addControl(comandoControleFiltro);
+							if(#{usuario.perfil.nome == 'CERTIFICADOR'}||#{usuario.perfil.nome == 'ADMINISTRADOR'}){
+								if(#{usuario.entidadeCertificadora.idEntidadeCertificadora != 12}){
+									//mapa.addControl(comandoControleEmbed);
+								}	
+							}
+						}
+						if(comando == 'nenhum'){
+							document.getElementById("divTelaKML").style.visibility = "hidden";
+							document.getElementById("divTelaFiltro").style.visibility = "hidden";
+							mapa.addControl(comandoControleMarcadorDeArea);
+							mapa.addControl(comandoControleMao);
+							mapa.addControl(comandoControleKernel);
+							mapa.addControl(comandoControleFiltro);
+							if(#{usuario.perfil.nome == 'CERTIFICADOR'}||#{usuario.perfil.nome == 'ADMINISTRADOR'}){
+								if(#{usuario.entidadeCertificadora.idEntidadeCertificadora != 12}){
+									//mapa.addControl(comandoControleEmbed);
+								}	
+							}
+						}
+						if(comando == 'embed'){
+							document.getElementById("divTelaKML").style.visibility = "hidden";
+							document.getElementById("divTelaFiltro").style.visibility = "hidden";
+							mapa.addControl(comandoControleMarcadorDeArea);
+							mapa.addControl(comandoControleMao);
+							mapa.addControl(comandoControleKernel);
+							mapa.addControl(comandoControleFiltro);
+							if(#{usuario.perfil.nome == 'CERTIFICADOR'}||#{usuario.perfil.nome == 'ADMINISTRADOR'}){
+								if(#{usuario.entidadeCertificadora.idEntidadeCertificadora != 12}){
+									//mapa.addControl(comandoControleEmbed);
+								}	
+							}
+						}
+						
+				}
+				
+				try{					
+					selecionarComando(map, 'mao');
+				}catch(e){};				
+			 /* ]]> */	
+			</script>
+</t:panelGroup>
+</body>
+</html>

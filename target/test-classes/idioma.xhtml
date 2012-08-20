@@ -1,0 +1,49 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:t="http://myfaces.apache.org/tomahawk">
+
+<h:form>
+<table border="0" cellspacing="0" cellpadding="0" style="position: absolute; right: 0; margin-top: 30px;">
+	<tr >
+		<td>
+			<div style="margin-right: 2px; float: left">
+				<t:commandLink immediate="true" action="#{localeForm.MudaLocale}">
+					<f:param value="pt" name="languageCode" />
+					<h:graphicImage value="/images/flags/Brazil.gif"></h:graphicImage>
+				</t:commandLink>
+			</div>
+			<div style="margin-right: 2px;margin-left:2px; float: left">
+				<t:commandLink immediate="true" action="#{localeForm.MudaLocale}">
+					<f:param value="en" name="languageCode" />
+					<h:graphicImage value="/images/flags/USA.png"></h:graphicImage>
+				</t:commandLink>
+			</div>
+			<div style="margin-right: 2px;margin-left:2px; float: left">
+				<t:commandLink immediate="true" action="#{localeForm.MudaLocale}">
+					<f:param value="fr" name="languageCode" />
+					<h:graphicImage value="/images/flags/French.PNG"></h:graphicImage>
+				</t:commandLink>
+			</div>
+			<div style="margin-right: 2px;margin-left:2px; float: left">
+				<t:commandLink immediate="true" action="#{localeForm.MudaLocale}">
+					<f:param value="es" name="languageCode" />
+					<h:graphicImage value="/images/flags/Spain.gif"></h:graphicImage>
+				</t:commandLink>
+			</div>
+			<div style="margin-left:2px; float: left">
+				<t:commandLink immediate="true" action="#{localeForm.MudaLocale}">
+					<f:param value="it" name="languageCode" />
+					<h:graphicImage value="/images/flags/Italy.png"></h:graphicImage>
+				</t:commandLink>
+			</div>
+		</td>
+	</tr>
+</table>
+</h:form>
+
+</html>

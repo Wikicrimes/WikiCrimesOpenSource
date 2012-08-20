@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC
+"-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:c="http://java.sun.com/jstl/core"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:t="http://myfaces.apache.org/tomahawk"
+	xmlns:fn="http://java.sun.com/jsp/jstl/functions"
+	xmlns:rich="http://richfaces.org/rich"
+	xmlns:a4j="http://richfaces.org/a4j">
+	<br/>
+	
+	<head>
+		<meta http-equiv="Cache-Control" content="no-store" />
+		<meta http-equiv="Pragma" content="no-cache" />
+		<meta http-equiv="Expires" content="0" />
+		<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+		<link rel="shortcut icon" href="./images/favicon.ico"
+			type="image/x-icon" />
+		<link rel="stylesheet" type="text/css" href="./styles/wikicrimes.css"
+			title="default" />
+		
+	</head>
+	
+	<f:view>
+		<ui:composition template="layoutListaCrimes.xhtml">
+			<ui:define name="titulo">
+                #{mostrarDadosForm.tipoCrime.descricao}
+            </ui:define>
+			<ui:define name="menu">		
+					<ui:include src="header.xhtml" />
+			</ui:define>
+			<ui:define name="idioma">
+					
+				<ui:include src="idioma.xhtml" />
+				
+			</ui:define>
+			
+			<ui:define name="conteudo">
+			<hr /><br clear="both" />
+				
+				<rich:panel>
+					<t:panelGrid>
+						<t:panelGroup>
+							<h:outputLink value="/">
+								<h:outputText value="#{messages['page.main']}"/>
+							</h:outputLink>
+							<h:outputText value=" >> Crimes >> #{messages[mostrarDadosForm.tipoCrime.nome]}" />
+						</t:panelGroup>
+					</t:panelGrid>
+				</rich:panel>
+				<br />
+				<h:outputFormat value="#{messages['crime.qtdresultados']}">
+					<f:param value="#{mostrarDadosForm.qtdByTipoCrime}"/>
+				</h:outputFormat>
+				<hr style="border: 0; border-top: 2px #A9A9A9 dotted;" />
+				<t:panelGroup id="listarCrimes" forceId="true">
+					<table>
+						<c:forEach items="#{mostrarDadosForm.crimes}" var="crime" varStatus="contador">
+						<tr style="background-color: #{contador.index % 2 == 0 ? '#fff' : '#EFEFEF'}">
+							<td>
+								<h:outputText value="#{crime.dataHoraRegistro}">
+									<f:convertDateTime pattern="#{messages['crime.data.formato']}" />
+								</h:outputText>
+							</td>
+							<td width="860px">				
+								<h:outputLink value="verCrime.html">
+				    				<h:outputText value="#{fn:length(crime.descricao) le 105 ? fn:substring(crime.descricao,0,fn:length(crime.descricao)) : fn:substring(crime.descricao,0,105)}"/>
+				    				<c:if test="#{fn:length(crime.descricao) ge 105}">
+				    					<span>...</span>
+				    				</c:if>
+									<f:param name="idCrime" value="#{crime.chave}"/>
+								</h:outputLink>
+							</td>
+						</tr>
+						</c:forEach>
+					</table>
+				</t:panelGroup>
+				
+				<hr style="border: 0; border-top: 2px #A9A9A9 dotted;" />
+				
+				<h:form id="indices">
+				<div class="pagination">
+					<ul>
+						<li>
+							<!--<a4j:commandLink reRender="listarCrimes, paginaAtual, indices" styleClass="#{mostrarDadosForm.paginaAtual == 0 ? 'prevnext disablelink' : 'prevnext'}"><h:outputText value="#{messages['page.prev']} " />                                                                            
+			                    	<f:setPropertyActionListener target="#{mostrarDadosForm.paginaAtual}" value="#{mostrarDadosForm.paginaAtual == 0 ? mostrarDadosForm.paginaAtual : mostrarDadosForm.paginaAtual - 1}"/>
+		                   		</a4j:commandLink>
+						-->
+						<h:outputLink styleClass="#{mostrarDadosForm.paginaAtual == 0 ? 'prevnext disablelink' : 'prevnext'}" value="listarCrimesTipo.html">
+		                    	<h:outputText value="#{messages['page.prev']}"/>
+		                    	<f:param name="idTipoCrime" value="#{mostrarDadosForm.idTipoCrime}"/>
+		                    	<f:param name="paginaAtual" value="#{mostrarDadosForm.paginaAtual == 0 ? mostrarDadosForm.paginaAtual + 1 : mostrarDadosForm.paginaAtual}"/>
+		                </h:outputLink>
+						</li>
+						<c:if test="#{mostrarDadosForm.paginaAtual == mostrarDadosForm.sizeArrayPaginacao-1}" >
+							<li>
+		                    <!--<a4j:commandLink reRender="listarCrimes, paginaAtual, indices" >#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual]-3}                                                                          
+		                       	<f:setPropertyActionListener target="#{mostrarDadosForm.paginaAtual}" value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual-4]}"/>
+		                    </a4j:commandLink>
+							-->
+							<h:outputLink value="listarCrimesTipo.html">
+		                    	<h:outputText value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual]-3}"/>
+		                    	<f:param name="idTipoCrime" value="#{mostrarDadosForm.idTipoCrime}"/>
+		                    	<f:param name="paginaAtual" value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual-3]}"/>
+		                	</h:outputLink>
+							</li>
+							<li>
+							<!--<a4j:commandLink reRender="listarCrimes, paginaAtual, indices">#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual]-2}                                                                          
+		                       	<f:setPropertyActionListener target="#{mostrarDadosForm.paginaAtual}" value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual-3]}"/>
+		                    </a4j:commandLink>
+							-->
+							<h:outputLink value="listarCrimesTipo.html">
+		                    	<h:outputText value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual]-2}"/>
+		                    	<f:param name="idTipoCrime" value="#{mostrarDadosForm.idTipoCrime}"/>
+		                    	<f:param name="paginaAtual" value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual-2]}"/>
+		                	</h:outputLink>
+							</li>
+						</c:if>
+						<c:if test="#{mostrarDadosForm.paginaAtual == mostrarDadosForm.sizeArrayPaginacao-2}" >
+							<li>
+							<!--<a4j:commandLink reRender="listarCrimes, paginaAtual, indices">#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual]-2}                                                                          
+		                       	<f:setPropertyActionListener target="#{mostrarDadosForm.paginaAtual}" value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual-3]}"/>
+		                    </a4j:commandLink>
+							-->
+							<h:outputLink value="listarCrimesTipo.html">
+		                    	<h:outputText value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual]-2}"/>
+		                    	<f:param name="idTipoCrime" value="#{mostrarDadosForm.idTipoCrime}"/>
+		                    	<f:param name="paginaAtual" value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual-2]}"/>
+		                	</h:outputLink>
+							</li>
+						</c:if>
+						<c:if test="#{mostrarDadosForm.paginaAtual gt 1}" >
+		                    <li>
+		                    <!--<a4j:commandLink reRender="listarCrimes, paginaAtual, indices">#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual]-1}                                                                          
+		                       	<f:setPropertyActionListener target="#{mostrarDadosForm.paginaAtual}" value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual-2]}"/>
+		                    </a4j:commandLink>
+		                    -->
+		                    <h:outputLink value="listarCrimesTipo.html">
+		                    	<h:outputText value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual]-1}"/>
+		                    	<f:param name="idTipoCrime" value="#{mostrarDadosForm.idTipoCrime}"/>
+		                    	<f:param name="paginaAtual" value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual-1]}"/>
+		                	</h:outputLink>
+		                    </li>
+		                </c:if>
+		                <c:if test="#{mostrarDadosForm.paginaAtual gt 0}" >
+		                    <li>
+		                    <!--<a4j:commandLink reRender="listarCrimes, paginaAtual, indices">#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual]}                                                                          
+		                       	<f:setPropertyActionListener target="#{mostrarDadosForm.paginaAtual}" value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual-1]}"/>
+		                    </a4j:commandLink>
+		                    -->
+		                    <h:outputLink value="listarCrimesTipo.html">
+		                    	<h:outputText value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual]}"/>
+		                    	<f:param name="idTipoCrime" value="#{mostrarDadosForm.idTipoCrime}"/>
+		                    	<f:param name="paginaAtual" value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual]}"/>
+		                	</h:outputLink>
+		                    </li>
+		                </c:if>
+	                    <li>
+							<!--<a4j:commandLink reRender="listarCrimes, paginaAtual, indices" styleClass="currentpage">#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual]+1}                                                                          
+		                       	<f:setPropertyActionListener target="#{mostrarDadosForm.paginaAtual}" value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual]}"/>
+		                    </a4j:commandLink>
+	                    -->
+	                    <h:outputLink styleClass="currentpage" value="listarCrimesTipo.html">
+		                    	<h:outputText value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual]+1}"/>
+		                    	<f:param name="idTipoCrime" value="#{mostrarDadosForm.idTipoCrime}"/>
+		                    	<f:param name="paginaAtual" value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual]+1}"/>
+		                </h:outputLink>
+	                    </li>
+		               <c:if test="#{mostrarDadosForm.paginaAtual+1 lt mostrarDadosForm.sizeArrayPaginacao}" >
+		                    <li>
+		                    <!--<a4j:commandLink reRender="listarCrimes, paginaAtual, indices">#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual]+2}                                                                           
+		                       	<f:setPropertyActionListener target="#{mostrarDadosForm.paginaAtual}" value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual+1]}"/>
+		                    </a4j:commandLink>
+		                	-->
+		                	<h:outputLink value="listarCrimesTipo.html">
+		                    	<h:outputText value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual]+2}"/>
+		                    	<f:param name="idTipoCrime" value="#{mostrarDadosForm.idTipoCrime}"/>
+		                    	<f:param name="paginaAtual" value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual+1]+1}"/>
+		                	</h:outputLink>
+		                	</li>
+		                </c:if>
+		                <c:if test="#{mostrarDadosForm.paginaAtual+2 lt mostrarDadosForm.sizeArrayPaginacao}" >
+		                    <li>
+		                    <!--<a4j:commandLink reRender="listarCrimes, paginaAtual, indices">#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual]+3}                                                                          
+		                       	<f:setPropertyActionListener target="#{mostrarDadosForm.paginaAtual}" value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual+2]}"/>
+		                    </a4j:commandLink>
+							-->
+							<h:outputLink value="listarCrimesTipo.html">
+		                    	<h:outputText value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual]+3}"/>
+		                    	<f:param name="idTipoCrime" value="#{mostrarDadosForm.idTipoCrime}"/>
+		                    	<f:param name="paginaAtual" value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual+2]+1}"/>
+		                	</h:outputLink>
+							</li>
+						</c:if>
+						<c:if test="#{mostrarDadosForm.paginaAtual == 0}" >
+							<li>
+		                    <!--<a4j:commandLink reRender="listarCrimes, paginaAtual, indices">#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual]+4}                                                                          
+		                       	<f:setPropertyActionListener target="#{mostrarDadosForm.paginaAtual}" value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual+3]}"/>
+		                    </a4j:commandLink>
+							-->
+							<h:outputLink value="listarCrimesTipo.html">
+		                    	<h:outputText value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual]+4}"/>
+		                    	<f:param name="idTipoCrime" value="#{mostrarDadosForm.idTipoCrime}"/>
+		                    	<f:param name="paginaAtual" value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual+4]}"/>
+		                	</h:outputLink>
+							</li>
+							<li>
+							<!--<a4j:commandLink reRender="listarCrimes, paginaAtual, indices">#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual]+5}                                                                          
+		                       	<f:setPropertyActionListener target="#{mostrarDadosForm.paginaAtual}" value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual+4]}"/>
+		                    </a4j:commandLink>
+							-->
+							<h:outputLink value="listarCrimesTipo.html">
+		                    	<h:outputText value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual]+5}"/>
+		                    	<f:param name="idTipoCrime" value="#{mostrarDadosForm.idTipoCrime}"/>
+		                    	<f:param name="paginaAtual" value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual+5]}"/>
+		                	</h:outputLink>
+							</li>
+						</c:if>
+						<c:if test="#{mostrarDadosForm.paginaAtual == 1}" >
+							<li>
+							<!--<a4j:commandLink reRender="listarCrimes, paginaAtual, indices">#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual]+4}                                                                          
+		                       	<f:setPropertyActionListener target="#{mostrarDadosForm.paginaAtual}" value="#{mostrarDadosForm.paginacao[mostrarDadosForm.paginaAtual+3]}"/>
+		                    </a4j:commandLink>
+							-->
+							<h:outputLink value="listarCrimesTipo.html">
+		                    	<h:outputText value="#{mostrarDadosForm.paginaAtual+4}"/>
+		                    	<f:param name="idTipoCrime" value="#{mostrarDadosForm.idTipoCrime}"/>
+		                    	<f:param name="paginaAtual" value="#{mostrarDadosForm.paginaAtual+4}"/>
+		                    </h:outputLink>
+							</li>
+						</c:if>
+	                    <li>
+							
+							<!--<a4j:commandLink reRender="listarCrimes, paginaAtual, indices" styleClass="#{mostrarDadosForm.paginaAtual lt mostrarDadosForm.sizeArrayPaginacao-1 ? 'prevnext' : 'prevnext disablelink'}"><h:outputText value="#{messages['page.next']} " />                                                                            
+		                    	<f:setPropertyActionListener target="#{mostrarDadosForm.paginaAtual}" value="#{mostrarDadosForm.paginaAtual lt mostrarDadosForm.sizeArrayPaginacao-1 ? mostrarDadosForm.paginaAtual+1 : mostrarDadosForm.sizeArrayPaginacao-1}"/>
+		                    </a4j:commandLink>
+		                    -->
+		                    <h:outputLink styleClass="#{mostrarDadosForm.paginaAtual lt mostrarDadosForm.sizeArrayPaginacao-1 ? 'prevnext' : 'prevnext disablelink'}" value="listarCrimesTipo.html">
+		                    	<h:outputText value="#{messages['page.next']}"/>
+		                    	<f:param name="idTipoCrime" value="#{mostrarDadosForm.idTipoCrime}"/>
+		                    	<f:param name="paginaAtual" value="#{mostrarDadosForm.paginaAtual lt mostrarDadosForm.sizeArrayPaginacao-1 ? mostrarDadosForm.paginaAtual+2 : mostrarDadosForm.sizeArrayPaginacao}"/>
+		                    </h:outputLink>
+	                	</li>
+					</ul>
+				</div>
+					<t:saveState value="#{mostrarDadosForm.idTipoCrime}"></t:saveState>
+					<t:saveState value="#{mostrarDadosForm.maxPaginacao}"></t:saveState>
+					<t:saveState value="#{mostrarDadosForm.paginaAtual}"></t:saveState>
+                    <t:saveState value="#{mostrarDadosForm.arrayPaginacao}"></t:saveState>
+					
+				</h:form>
+				<hr style="border: 0; border-top: 2px #A9A9A9 dotted;" />
+			</ui:define>
+			<ui:define name="footer">
+				<ui:include src="footer.xhtml" />
+				<br/>
+				<br/>
+				<iframe src="http://www.facebook.com/plugins/like.php?href=http%3A%2F%2Fwww.wikicrimes.org&amp;layout=standard&amp;show_faces=true&amp;width=450&amp;action=like&amp;colorscheme=light&amp;height=80" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:450px; height:80px;" allowTransparency="true"></iframe>
+			</ui:define>
+		</ui:composition>
+	</f:view>
+	
+	</html>

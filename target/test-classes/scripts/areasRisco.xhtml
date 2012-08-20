@@ -1,0 +1,1001 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC
+"-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:c="http://java.sun.com/jstl/core"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:t="http://myfaces.apache.org/tomahawk"
+	xmlns:rich="http://richfaces.org/rich"
+	xmlns:a4j="http://richfaces.org/a4j">
+
+<head>
+
+	<script type="text/javascript" src="scripts/dragresize.js"></script>
+	<script type="text/javascript">
+	        /* <![CDATA[ */
+	    
+			var polyHotspot; //poligono q aparece qd passa o mouse sobre um hotspot
+			var polyEditando; //poligono q foi gravado pelo usuario como uma de suas "Areas de Risco"
+			var idPolyEditando; //id da AreaRisco do polyEditando
+			var nomePolyEditando; //nome da AreaRisco do polyEditando
+			var minZoomAreasRisco = 11;
+			var maxZoomAreasRisco = 14;
+
+			
+	    //******************************************************************
+		//MARCACACAO DE HOTSPOT
+			
+			var mousemoveHotspot;
+			var clickHotspot;
+			var isMouseNoHotspot;
+			var posHintHotspot;
+			var corPoly1 = '#0000FF'; //cor do poligono novo, ao passar o mouse nos hotspots
+			var corPoly2 = '#0000FF'; //cor do poligono salvo, areas gravadas pelo usuario
+			//roxo #800080
+			//brick #B22222
+			//azul #0000FF
+			
+			function ativaMarcacaoHotspot(){
+				//mousemove listener
+				mousemoveHotspot = GEvent.addListener(map, "mousemove", function (latlng) {
+					//marcar apenas em determinados niveis zoom
+					var zoom = map.getZoom();
+					if(zoom < minZoomAreasRisco || zoom > maxZoomAreasRisco){
+						return;
+					}
+
+					//nao marcar por cima de um poligono de area salva
+					if(isMinhasAreasExibindo && minhasAreas){
+						for(i=0; i<minhasAreas.length; i++){
+							var teste = minhasAreas[i];
+							if(minhasAreas[i].poligono.containsLatLng(latlng)){
+									return;
+							}
+						}
+					}
+					
+					//nao marcar denovo se ja tiver um poligono marcado (o mouse esta sobre ele)
+					if(polyHotspot && (polyHotspot.containsLatLng(latlng) || polyHotspot.isEditing)){
+						return;
+					}
+					
+					if(polyHotspot != null){
+						desmarcaHotspot();
+					}
+					var posGrid = latLongToGrid(latlng); //posicao no grid de densidades correspondente a posicao do mouse
+					isMouseNoHotspot = isCelulaNoHotspot(posGrid); 
+					if(isMouseNoHotspot){
+						marcaHotspot(posGrid);
+						//document.getElementById("map").style.cursor = 'hand'; //nao funcionou
+					}
+				});
+			}
+
+			function desativaMarcacaoHotspot(){
+				if(mousemoveHotspot)
+					GEvent.removeListener(mousemoveHotspot);
+			}
+
+			function marcaHotspot(posGrid){
+				var contorno = encontraContorno(posGrid);
+				if(contorno == null) return;
+				polyHotspot = new GPolygon(contorno, corPoly1, 5, .4, corPoly1, .2)//, '#0000FF', 5, 0.4, '#0000FF', 0.2);//GPolygon(latlngs:GLatLng[], strokeColor?:String, strokeWeight?:Number, strokeOpacity?:Number, fillColor?:Number, fillOpacity?:Number, opts?:GPolygonOptions)
+				map.addOverlay(polyHotspot);
+				if(isMinhasAreasExibindo){
+					esconderMinhasAreas();
+					exibirMinhasAreas();
+				}
+
+				//click listener
+				clickHotspot = GEvent.addListener(polyHotspot, "click", function (latlng) {
+					var msg = "#{messages['areasrisco.login']}"
+					//console.log('areasRisco.xhtml, 0');
+					var precisouLogin = loginCasoPrecise('5', msg);
+					if(precisouLogin){
+						//exibirMinhasAreas();
+						//exibirJanelaAreaRisco('Salvar');
+					}else{
+						GEvent.removeListener(clickHotspot);
+						exibirJanelaAreaRisco('Salvar');
+					}
+				});
+
+				//so pro ponteiro do mouse ficar "hand"
+				hostpostPointer = GEvent.addListener(polyHotspot, "mouseover", function(){});
+
+				//mostra hint
+				posHintHotspot = polyHotspot.getBounds().getNorthEast();
+				mostraHintMarcacaoHotspot(posHintHotspot);
+			}
+
+			var hostpostPointer;
+			var podeDesmarcarHotspot = true;
+			function desmarcaHotspot(){
+				
+				if(!polyHotspot || !podeDesmarcarHotspot) 
+					return;
+				
+				GEvent.removeListener(clickHotspot);
+				GEvent.removeListener(hostpostPointer); //listener q faz o ponteiro do mouse ficar hand no polyHotspot
+				map.removeOverlay(polyHotspot);
+				polyHotspot = null;
+
+				//esconde hint
+				removeHint();
+			}
+
+			
+			//******************************************************************
+			//LOGIGA PRA MARCAR CONTORNO DO HOTSPOT
+			
+			function encontraContorno(celulaInicial){
+				/*//inicializa
+				var visitado = new Array();
+				var cols = statistics.kernel.cols;
+				for(var i=0; i<cols; i++){
+					visitado[i] = new Array();
+				}*/
+
+				//encontra o contorno
+				//flood(celulaInicial);
+				var contorno = comerPelasBeiradas(celulaInicial);
+				if(contorno == null) return;
+
+				//diminui a quantidade de pontos do contorno
+				var passo = 3;
+				var temp = new Array();
+				for(var i=0; i<contorno.length; i+=passo)
+					temp[temp.length] = contorno[i];
+				temp[temp.length] = temp[0];
+
+				return temp;
+			}
+
+/*			//algoritmo alternativo ao "comerPelasBeiradas"
+			var contorno;
+			var visitado;
+			function flood(celula){
+				if(visitado[celula.x][celula.y])
+					return;
+				if(!isCelulaNoHotspot(celula)){
+					var latlng = gridToLatlng(celula);
+					contorno[contorno.length] = latlng;
+					return;
+				}
+				visitado[celula.x][celula.y] = true;
+				flood(celulaVizinha(celula, norte));
+				flood(celulaVizinha(celula, sul));
+				flood(celulaVizinha(celula, leste));
+				flood(celulaVizinha(celula, oeste));
+			}
+*/
+			//TODO tem um problema
+			//em cada passo da caminhada pela borda, n tao sendo processadas so as 3 celulas como na ilustracao 1 (como foi planejado)
+			//ta sendo processado como na ilustracao 2, pq nao ta "voltando" pro "x" antes de ir pra cima e pra esquerda (erro de implementacao mesmo)  
+			//so q, ao corrigir isso, para de funcionar 
+			//pq acontece com mais frequencia de nao achar "celula fora do hotspot" procurando na area menor (ilustracao 1)
+			//
+			//  1 			     2       < ^
+			//        ^		    	   < v < ^
+			//      < x >              V > x >
+			//                           V > 
+			function comerPelasBeiradas(celulaInicial){
+
+				//inicializa
+				var contorno = new Array();
+	
+				//encontra uma celula qualquer da borda a partir da celula inicial (que esta no meio do hotspot)
+				var celula = celulaInicial;
+				while(isCelulaNoHotspot(celula)){
+					celula = celulaVizinha(celula, norte); //celula vizinha ao norte
+				}
+
+				//inclui a primeira celula encontrada
+				var direcao = norte;
+				contorno[contorno.length] = gridToLatlng(celula);
+				var primeira = celula; //usado na condicao de parada
+				var cont = 0;
+
+				//caminha pela borda ate fechar um 'ciclo' (voltar pra origem)
+				do{
+					direcao = oposta(direcao); //direcao oposta (de onde veio)
+					for(var i=0; i<3;i++){
+						//primeiro pra direita, depois pra frente, depois pra esquerda 
+						direcao = prox(direcao);
+						celula = celulaVizinha(celula, direcao);
+						if(!isCelulaNoHotspot(celula)){
+							//a primeira que satisfizer esta condicao faz parte da borda
+							contorno[contorno.length] = gridToLatlng(celula);
+							break;
+						}
+					}
+
+					//se o algoritmo se perder, ignora e retorna null;
+					cont++;
+					if(cont>200){ 
+						//alert('cont='+cont);
+						return null;
+					}
+					
+				}while(celula.x != primeira.x || celula.y != primeira.y);
+				
+				return contorno;
+			}
+
+			function isCelulaNoHotspot(celula){
+				if(statistics == undefined) return;
+				var grid = statistics.kernel.booleanGrid;
+				if(grid == undefined || grid[celula.x] == undefined) return false;
+				var cell = grid[celula.x][celula.y];
+				return cell == 1;
+			}
+
+			var norte = 0;
+			var leste = 1;
+			var sul = 2; 
+			var oeste = 3;
+			
+			function prox(dir){ 
+				//proxima direcao, no sentido horario
+				return (dir+1)%4;
+			}
+
+			function oposta(dir){
+				return (dir+2)%4;
+			}
+			
+			function celulaVizinha(celula, dir){ 
+				//celula vizinha na direcao passada como argumento
+				switch(dir){
+				case norte:
+					return new PosicaoGrid(celula.x, celula.y-1);
+				case sul:
+					return new PosicaoGrid(celula.x, celula.y+1);
+				case leste:
+					return new PosicaoGrid(celula.x-1, celula.y);
+				case oeste:
+					return new PosicaoGrid(celula.x+1, celula.y);
+				}
+			}
+
+			function PosicaoGrid(x,y){
+				this.x = x;
+				this.y = y;
+				return this;
+			}
+
+			function latLongToGrid(latlng){
+				if(statistics == undefined) return;
+				var nodeSize = statistics.kernel.nodeSize;
+				var clickPixel = map.getCurrentMapType().getProjection().fromLatLngToPixel(latlng, map.getZoom());
+				var x = clickPixel.x-westPixel;
+				var y = clickPixel.y-northPixel;
+				var noX = parseInt(x/nodeSize);
+				var noY = parseInt(y/nodeSize);
+				return new PosicaoGrid(noX,noY);
+			}
+
+			function gridToLatlng(posGrid){
+				if(statistics == undefined) return;
+				var nodeSize = statistics.kernel.nodeSize;
+				var xPixel = westPixel + posGrid.x * nodeSize;
+				var yPixel = northPixel + posGrid.y * nodeSize;
+				var posPixel = new GPoint(xPixel,yPixel);
+				var posLatlng = map.getCurrentMapType().getProjection().fromPixelToLatLng(posPixel, map.getZoom());
+				return posLatlng;
+			}
+
+			// Create polygon method for collision detection
+			GPolygon.prototype.containsLatLng = function(latLng) {
+			    // Do simple calculation so we don't do more CPU-intensive calcs for obvious misses
+			    var bounds = this.getBounds();
+			   
+			    if(!bounds.containsLatLng(latLng)) {
+			        return false;
+			    }
+			   
+			    var numPoints = this.getVertexCount();
+			    var inPoly = false;
+			    var i;
+			    var j = numPoints-1;
+			   
+			    for(var i=0; i < numPoints; i++) {
+			        var vertex1 = this.getVertex(i);
+			        var vertex2 = this.getVertex(j);
+			       
+			        if (vertex1.lng() < latLng.lng() && vertex2.lng() >= latLng.lng() || vertex2.lng() < latLng.lng() && vertex1.lng() >= latLng.lng())  {
+			            if (vertex1.lat() + (latLng.lng() - vertex1.lng()) / (vertex2.lng() - vertex1.lng()) * (vertex2.lat() - vertex1.lat()) < latLng.lat()) {
+			                inPoly = !inPoly;
+			            }
+			        }
+			       
+			        j = i;
+			    }
+			   
+			    return inPoly;
+			};
+
+
+			//******************************************************************
+			//EDICAO DO POLIGONO
+
+			GPolygon.prototype.toggleEditing = function() {
+				if(!this.isEditing){
+					this.enableEditing();
+					this.isEditing = true;
+					//document.body.style.cursor = "crosshair";
+				}else{
+					this.disableEditing();
+					this.isEditing = false;
+					//document.body.style.cursor = "auto";
+				}
+			}
+
+			function alterarFormato(){
+				if(polyHotspot) 
+					polyHotspot.toggleEditing();
+				if(polyEditando)
+					polyEditando.toggleEditing();
+			}
+
+			//var isHintAgendado;
+			function mostraHintMarcacaoHotspot(latlng){
+				if(isMouseNoHotspot && !isJanelaAreaRiscoVisible()){
+					var msg = "#{messages['areasrisco.tooltip']}";
+					mostraHintNoMapa(msg, latlng, false);
+				}
+				//isHintAgendado = false;
+			}
+
+			//******************************************************************
+			//JANELA PARA EDITAR, SALVAR A MARCACAO OU MANDAR ALERTA
+
+			var podeAbrirJanelaAreaRisco = true;
+			
+			function exibirJanelaAreaRisco(tipo){
+				var poly;
+				if(tipo == 'Salvar'){
+					poly = polyHotspot;
+					podeDesmarcarHotspot = false;
+				}else if(tipo == 'Editar'){
+					poly = polyEditando;
+				}
+				podeMudarModoKernel = false;
+				if(kernelEnabled){
+					//desativaMapaKernel();
+					kernelEnabled = false;
+					apagaMapaKernel();
+				}
+				removeHint();
+				zoomNoPoligono(poly);
+				document.getElementById("editarAreaRiscoTituloTD").innerHTML = nomePolyEditando;
+				document.getElementById("editarAreaRiscoDescTD").innerHTML = "#{messages['areasrisco.janela.editar.explicacao']}" + nomePolyEditando;
+				document.getElementById("janela"+tipo+"AreasRisco").style.visibility = "visible";
+
+				ativaDragJanelaAreaRisco(tipo);
+				
+				podeAbrirJanelaAreaRisco = false;
+			}
+			
+			function fecharJanelaAreaRisco(tipo){
+				fecharTodasOpcoesAreasRisco();
+				limparShareLinks();
+				fecharOpcaoAreasRisco('salvar');
+				fecharOpcaoAreasRisco('editarNome');
+				fecharOpcaoAreasRisco('editarFormato');
+				fecharOpcaoAreasRisco('excluir');
+				limparCamposAreaRisco();
+				document.getElementById("janela"+tipo+"AreasRisco").style.visibility = "hidden";
+				if(polyHotspot && polyHotspot.isEditing){
+					polyHotspot.disableEditing();
+					polyHotspot.isEditing = false;
+				}
+				if(polyEditando && polyEditando.isEditing){
+					polyEditando.disableEditing();
+					polyEditando.isEditing = false;
+				}
+				podeCarregarCrimes=false;
+				podeMudarModoKernel = true;
+				//console.log("fechar 1");
+				recuperarZoom();
+				//console.log("fechar 2");
+				podeDesmarcarHotspot = true;
+				podeCarregarCrimes=true;
+
+				if(polyHotspot){
+					map.removeOverlay(polyHotspot);
+					polyHotspot = null;
+				}
+
+				refreshMinhasAreas();
+				
+				podeAbrirJanelaAreaRisco = true;
+
+				//GEvent.trigger(map,"moveend");
+			}
+
+			function isJanelaAreaRiscoVisible(tipo){
+				if(tipo == 'Salvar')
+					return document.getElementById("janelaSalvarAreasRisco").style.visibility == "visible";
+				else if(tipo == 'Editar')
+					return document.getElementById("janelaSalvarAreasRisco").style.visibility == "visible";
+				else
+					return isJanelaAreaRiscoVisible('Salvar') || isJanelaAreaRiscoVisible('Editar');
+			}
+
+			var centroAnterior; //pra posicionar a tela de volta ao fechar a telinha da area de interesse 
+			var zoomAnterior;
+			
+			function zoomNoPoligono(poly){
+				var mapBounds = map.getBounds();
+				centroAnterior = mapBounds.getCenter();
+				zoomAnterior = map.getZoom();
+				var polyBounds = poly.getBounds();
+				var zoom = map.getBoundsZoomLevel(polyBounds);
+				var centro = polyBounds.getCenter();
+				var widthJanela = document.getElementById("janelaSalvarAreasRisco").offsetWidth;
+				centro = deslocaLatLng(centro, widthJanela/2, zoom);
+				map.setCenter(centro, zoom);
+			}
+
+			function deslocaLatLng(latlng, pixelDistance, zoom){
+				//Desloca um GLatLong pra leste. A distancia do deslocamento eh dada em pixels 
+				//*lembrando que pra zooms diferentes, a escala em pixels eh diferente.
+				var pixel = latlngToPixel(latlng, zoom);
+				pixel.x -= pixelDistance;
+				return pixelToLatlng(pixel, zoom);
+			}
+
+			function recuperarZoom(){
+				map.setCenter(centroAnterior, zoomAnterior);
+				centroAnterior = null;
+				zoomAnterior = null;
+			}
+
+			function exibirOpcaoAreasRisco(nome){
+
+				fecharTodasOpcoesAreasRisco();
+				var td = document.getElementById(nome + "AreaRiscoTD");
+				var div = document.getElementById(nome + "AreaRiscoDIV");
+				td.appendChild(div);
+			}
+
+			function fecharOpcaoAreasRisco(nome){
+				var div = document.getElementById(nome + "AreaRiscoDIV");
+				var invisivel = document.getElementById("divInvisivel");
+				invisivel.appendChild(div);
+			}
+
+			function fecharTodasOpcoesAreasRisco(){
+				var invisivel = document.getElementById("divInvisivel");
+				invisivel.appendChild(document.getElementById("salvarAreaRiscoDIV"));
+				invisivel.appendChild(document.getElementById("salvarFormatoAreaRiscoDIV"));
+				invisivel.appendChild(document.getElementById("editarNomeAreaRiscoDIV"));
+				invisivel.appendChild(document.getElementById("editarFormatoAreaRiscoDIV"));
+				invisivel.appendChild(document.getElementById("excluirAreaRiscoDIV"));
+				fecharShareLinks('salvar');
+				fecharShareLinks('editar');
+			}
+
+			function isOpcaoAreasRiscoVisible(nome){
+				var div = document.getElementById(nome + "AreaRiscoDIV");
+				return div.parentNode.id == nome + "AreaRiscoTD";
+			}
+
+			function toggleOpcaoAreasRisco(nome){
+				if(isOpcaoAreasRiscoVisible(nome))
+					fecharOpcaoAreasRisco(nome);
+				else
+					exibirOpcaoAreasRisco(nome);
+			}
+
+			function atualizaNomeInput(){
+				var input = document.getElementById("editarNomeInput");
+				input.value = nomePolyEditando;
+			}
+
+			function limparCamposAreaRisco(){
+				document.getElementById("nomeAreaInput").value = "";
+				document.getElementById("editarNomeInput").value = "";
+			}
+
+			//******************************************************************
+			//SALVAR, EDITAR E CARREGAR "AREAS RISCO"
+
+			var minhasAreas;
+			var isMinhasAreasExibindo = false;
+
+			function carregarMinhasAreas(){
+				minhasAreas = [];
+				var str = requisicaoTexto("ServletAreasRisco", "acao=listar");
+				if(str.length > 0){
+					var splitStr = str.split("||");
+					for(i=0; i<splitStr.length; i++){
+						var strPoli = splitStr[i];
+						var splitPoly = strPoli.split("|");
+						var id = splitPoly[0];
+						var nome = splitPoly[1];
+						var vertices = [];
+						for(j=2; j<splitPoly.length; j++){ //pula os 2 primeiros elementos q sao o id e o nome
+							var strPonto = splitPoly[j];
+							var splitPonto = strPonto.split(",");
+							var latlng = new GLatLng(splitPonto[0], splitPonto[1]);
+							vertices.push(latlng);
+						}
+						var poli = new GPolygon(vertices, corPoly2, 5, .8, corPoly2, .4);
+						var area = new AreaRisco(id, nome, poli);
+						minhasAreas.push(area);
+					}
+				}
+			}
+
+			function exibirMinhasAreas(){
+				
+				//console.log('areasRisco.xhtml, 8');
+				if(isMinhasAreasExibindo) 
+					return;
+
+				if(!minhasAreas)
+					carregarMinhasAreas();
+
+				for(i=0; i<minhasAreas.length; i++){
+					var area = minhasAreas[i];
+					
+					area.show(map);
+				}
+				isMinhasAreasExibindo = true;
+			}
+
+			function esconderMinhasAreas(){
+				if(!isMinhasAreasExibindo || !minhasAreas) 
+					return;
+				
+				for(i=0; i<minhasAreas.length; i++){
+					var area = minhasAreas[i];
+					area.hide(map);
+				}
+				isMinhasAreasExibindo = false;
+			}
+
+			function toggleExibirMinhasAreas(){
+				if(isMinhasAreasExibindo)
+					esconderMinhasAreas();
+				else
+					exibirMinhasAreas();
+			}
+
+			function refreshMinhasAreas(){
+				var tavaExibindo = isMinhasAreasExibindo;
+				esconderMinhasAreas();
+				carregarMinhasAreas();
+				if(tavaExibindo)
+					exibirMinhasAreas();
+			}
+
+			function limparMinhasAreas(){
+				esconderMinhasAreas();
+				minhasAreas = null;
+			}
+
+			function salvarAreaRisco(){
+				var nome = document.getElementById("nomeAreaInput").value;
+				var poly = polyHotspot;
+
+				//construir area e mandar pro servidor
+				var str = "acao=salvar";
+				str += "&nome=" + nome;
+				str += "&vertices=" + polyToString(poly);
+				var id = requisicaoTexto("ServletAreasRisco", str);
+
+				refreshMinhasAreas();
+
+				//tirar o polyHotspot (vai ser substituido pelo salvo)
+				map.removeOverlay(polyHotspot);
+				polyHotspot = null;
+			}
+
+			function editarNomeAreaRisco(){
+				var str = "acao=renomear";
+				str += "&id="+idPolyEditando;
+				str += "&nome="+document.getElementById("editarNomeInput").value;
+				requisicaoTexto("ServletAreasRisco",str);
+				refreshMinhasAreas();
+			}
+
+			function editarFormatoAreaRisco(){
+				if(polyEditando){
+					var str = "acao=alterarFormato";
+					str += "&id="+idPolyEditando;
+					str += "&vertices="+polyToString(polyEditando);
+					requisicaoTexto("ServletAreasRisco",str);
+				}
+			}
+
+			function excluirAreaRisco(){
+				var str = "acao=excluir";
+				str += "&id="+idPolyEditando;
+				requisicaoTexto("ServletAreasRisco",str);
+				map.removeOverlay(polyEditando);
+				refreshMinhasAreas();
+				fecharJanelaAreaRisco('Editar');
+			}
+
+
+			function polyToString(poly){
+				var str = "";
+				for(i=0; i<poly.getVertexCount(); i++){
+					var v = poly.getVertex(i);
+					str += v.lat() + "," + v.lng() + "|";
+				}
+				str = str.substr(0, str.length - 1);
+				return str;
+			}
+
+			function AreaRisco(id, nome, poligono){
+				this.id = id;
+				this.nome = nome;
+				this.poligono = poligono;
+				poligono.areaRisco = this;
+				this.show = function(map){ 
+					map.addOverlay(poligono);
+					this.click = GEvent.addListener(this.poligono, "click", function (latlng) {
+						polyEditando = this;
+						idPolyEditando = id;
+						nomePolyEditando = nome;
+						if(podeAbrirJanelaAreaRisco)
+							exibirJanelaAreaRisco('Editar');
+					});
+
+					//mostra hint
+					this.mouseover = GEvent.addListener(this.poligono, "mouseover", function () {
+						posHint = this.getBounds().getNorthEast();
+						mostraHintNoMapa(this.areaRisco.nome, posHint, true);
+						desmarcaHotspot();
+					});
+
+					this.mouseout = GEvent.addListener(this.poligono, "mouseout", function () {
+						removeHint();
+					});
+				}
+				this.hide = function(map){
+					map.removeOverlay(poligono);
+					GEvent.removeListener(this.click);
+				}
+			}
+
+
+			//******************************************************************
+			//LINKS PRA SERVICOS (twitter, myspace, etc)
+			
+			function limparShareLinks(){
+				bufferShareLinks = null;
+			}
+
+			var bufferShareLinks;
+			function exibirShareLinks(poly, tipo){
+				fecharTodasOpcoesAreasRisco();
+				var td = document.getElementById(tipo+"ShareLinksTD");
+				if(!bufferShareLinks){
+					td.innerHTML = "<img src='images/loading.gif' style='width:120px;height:15px' />"; //um gif de loading que substitui a divShareLinks, enquanto ela carrega
+					bufferShareLinks = divShareLinks(poly); 
+				}
+				td.innerHTML = bufferShareLinks;
+			}
+			
+			function fecharShareLinks(tipo){
+				tipo = tipo.toLowerCase();
+				if(isShareLinksVisible()){
+					var shareLinks = document.getElementById("shareLinksDIV");
+					var td = document.getElementById(tipo+"ShareLinksTD");
+					if(shareLinks.parentNode == td)
+						td.removeChild(shareLinks);
+				}
+			}
+
+			function isShareLinksVisible(){
+				return document.getElementById("shareLinksDIV") != null;
+			}
+
+			function toggleShareLinks(poly, tipo){
+				if(isShareLinksVisible())
+					fecharShareLinks(tipo);
+				else
+					exibirShareLinks(poly, tipo);
+			}
+
+			function divShareLinks(poly){
+				var urlImagem = getUrlImagem(poly);
+				var div = "<div id='shareLinksDIV'>";
+				for(var i=0; i<shareLinks.length; i++)
+					div += tagImageShareLink(shareLinks[i], urlImagem);
+				div += "</div>";
+				return div;
+			}
+
+			var msgShare = "";
+			function tagImageShareLink(link, urlImagem){
+				var urlSite = link.url;
+				urlSite = urlSite.replace("%url", escape(urlImagem));
+				urlSite = urlSite.replace("%texto", escape(msgShare));
+				
+				var tag = "<img src=\"images/icones_sites/" + link.id + "_32.png\" " + 
+							"onclick=\"window.open('" + urlSite + "', '_blank');\" " + 
+							"style=\"cursor:pointer\" alt=\"" + link.nome + "\" />";
+				return tag;
+			}
+
+			var shareLinks = [
+			     {id:'twitter', 	nome:'Twitter', 	url:'http://twitter.com/home?status=%texto (%url)'},
+			     {id:'myspace',		nome:'Myspace', 	url:'http://www.myspace.com/Modules/PostTo/Pages/?u=%url&t=%texto'},
+			     {id:'facebook',	nome:'Facebook', 	url:'http://www.facebook.com/sharer.php?u=%url'},
+			     {id:'google',		nome:'Google', 		url:'http://www.google.com/bookmarks/mark?op=add&bkmk=%url&title=%texto'},
+			     {id:'delicious',	nome:'Delicious', 	url:'http://del.icio.us/post?url=%url&title=%texto'},
+			     //{id:'blinklist',	nome:'Blinklist', 	url:'http://blinklist.com/index.php?Action=Blink/addblink.php&Description=&Url=%url&title=%texto'},
+			     //{id:'furl',		nome:'Furl', 		url:'http://www.furl.net/storeIt.jsp?&u=%url&t=%texto'},
+			     //{id:'technorati',nome:'Technorati', 	url:'http://technorati.com/faves?add=&url'},
+			     //{id:'magnolia',	nome:'Magnolia', 	url:'http://ma.gnolia.com/beta/bookmarklet/add?url=%url&title=%texto'},
+			     //{id:'sphinn',	nome:'Sphinn', 		url:'http://sphinn.com/submit.php?url=%url&title=%texto'},
+			     //{id:'mixx',		nome:'Mixx', 		url:'http://www.mixx.com/submit?page_url=%url&title=%texto'},
+			     {id:'qrcode',		nome:'QR Code',		url:'qrcodegen.html?string=%url' + escape('&qr=true')}
+			];
+
+			function getUrlImagem(poly){
+
+				//imagem do Google Static Maps API
+				var bounds = poly.getBounds();
+				var centro = bounds.getCenter();
+				var size = sizePixel(bounds);
+				var width = size.w;
+				var height = size.h;
+				var zoom = map.getZoom();
+
+				//bounds
+				var north = bounds.getNorthEast().lat();
+				var east = bounds.getNorthEast().lng();
+				var south = bounds.getSouthWest().lat();
+				var west = bounds.getSouthWest().lng();
+
+				//requisicao pro servlet ServletMapaEstatico (ou MapImage)
+				var paramsGerar = "acao=novaImagem" +
+									"&north=" + north + "&south=" + south + "&east=" + east + "&west=" + west + 
+									"&width=" + width + "&height=" + height +
+									"&centroLng=" + centro.lng() + "&centroLat=" + centro.lat() +
+									"&zoom=" + zoom +
+									"&poligono=" + polyToString(poly);
+									//pontosLatLngUrlParam(bounds);
+									
+				var urlMapaComKernel = requisicaoTexto("ServletImagemMapa", paramsGerar);
+				return urlMapaComKernel;
+			}
+
+
+			
+			//******************************************************************
+			//DRAG
+			
+			function ativaDragJanelaAreaRisco(tipo){
+				var div = document.getElementById('janela'+ tipo +'AreasRisco');
+				var espacoExtra = div.offsetWidth - 50;
+				var size = getBrowserWindowSize();
+				var config = {
+					minLeft: -espacoExtra,
+					minTop: 0, 
+				 	maxLeft:size.width + espacoExtra,
+				 	maxTop:size.height + espacoExtra,
+				}
+				var dragresize = new DragResize('dragresize', config);
+			
+			 	dragresize.isElement = function(elm){
+			 		if (elm.className && elm.className.indexOf('divJanelaAreaRisco') > -1) return true;
+			 	};
+			
+			 	dragresize.isHandle = function(elm){
+			 	 	if (elm.className && elm.className.indexOf('headerJanelaAreaRisco') > -1) return true;
+			 	};
+			
+			 	dragresize.apply(document);
+		 	}
+		 	
+		 	function getBrowserWindowSize(){
+		 		var w = 0;
+		 		var h = 0;
+
+		 		//IE
+		 		if(!window.innerWidth)
+		 		{
+		 			//strict mode
+		 			if(!(document.documentElement.clientWidth == 0))
+		 			{
+		 				w = document.documentElement.clientWidth;
+		 				h = document.documentElement.clientHeight;
+		 			}
+		 			//quirks mode
+		 			else
+		 			{
+		 				w = document.body.clientWidth;
+		 				h = document.body.clientHeight;
+		 			}
+		 		}
+		 		//w3c
+		 		else
+		 		{
+		 			w = window.innerWidth;
+		 			h = window.innerHeight;
+		 		}
+		 		return {width:w,height:h};
+		 	}
+
+			/* ]]> */
+	</script>
+
+	<style>
+	.divJanelaAreaRisco {
+		position: absolute;
+		width: 400px;
+		margin-left: auto;	
+		margin-right: auto;	
+		z-index: 90;	
+		opacity: 1.00;	
+		-moz-opacity: 1.00;	
+		filter: alpha(opacity = 100);	
+		color: #000000;	
+		font-family: helvetica, verdana, sans;	
+		font-size: 12px;
+		visibility: hidden;	
+		background-color: #ffffff;
+	}
+	.headerJanelaAreaRisco {
+		cursor: move;
+	}
+	.areas{
+		padding:5px 15px 15px;
+	}
+	.areas img{
+		height: 30px;
+		width: 30px;
+		text-align: right;
+	}
+	.areasTitle{
+		font-size:100%;
+		font-weight:bold;
+		margin-left:7ex;
+		margin-bottom: 5px
+	}
+	.areasLink{
+		vertical-align: bottom;
+	}
+	.areasHint{
+		vertical-align: top;
+	}
+	.areas a{
+		cursor:pointer;
+	}
+	.areas{
+		font-size: 13px;
+	}
+	
+	.drsElement {
+		position: absolute;
+	}
+	.drsMoveHandle {
+		cursor: move;
+	}
+	</style>
+	
+</head>
+<body>
+	
+	<div id="janelaSalvarAreasRisco" class="divJanelaAreaRisco" style="left:5%; top:20%">
+		<rich:panel style="width:100%; height:100%;	border-width:medium;	border-color:#3a6bb4; border-style:solid;">
+			<f:facet name="header">
+	           <h:panelGroup>
+	           	<table width="100%" class="headerJanelaAreaRisco"><tr>
+	           		<td align="center" style="width:100%"><h:outputText value="#{messages['areasrisco.janela.salvar.titulo']}" /></td>
+	                <td align="right"><h:graphicImage value="/images/close.gif" onclick="fecharJanelaAreaRisco('Salvar')" style="cursor:pointer;"/></td>
+	            </tr></table>
+	           </h:panelGroup>
+	       	</f:facet>
+			<table width="100%" class="areas">
+				<tr> <td colspan="2" width="100%" style="vertical-align:bottom;">
+					 <img src="images/areaRisco.png" style="width:45px; height:45px; float:left;"/> 
+					 <p class="areasTitle" > #{messages['areasrisco.janela.salvar.explicacao']} </p> </td>  </tr>
+				<tr> <td colspan="2" style="font-size:20; font-weight:bold;"> #{messages['areasrisco.janela.vcpode']} </td> </tr>
+				<tr height="10"></tr>
+				<tr> 
+					 <td rowspan="2" align="right">	<a onclick="toggleOpcaoAreasRisco('salvar')" > <img src="images/tag.png" style="height: 35px;width: 35px;" /> </a> </td>
+					 <td class="areasLink"> <a onclick="toggleOpcaoAreasRisco('salvar')" > #{messages['areasrisco.janela.nomear']} </a> </td> </tr>
+				<tr> <td class="areasHint"> #{messages['areasrisco.janela.nomear.explicacao']} </td> </tr>
+				<tr> <td id="salvarAreaRiscoTD" align="center" colspan="2" /> </tr>
+				<tr height="10"></tr>
+		        <tr>
+		        	 <td rowspan="2" align="right"> <a onclick="toggleShareLinks(polyHotspot, 'salvar');"  > <img src="images/warning.png"  /> </a> </td>
+		        	 <td class="areasLink"> <a onclick="toggleShareLinks(polyHotspot, 'salvar');"  > #{messages['areasrisco.janela.alertar']} </a> </td> </tr>
+		        <tr> <td class="areasHint"> #{messages['areasrisco.janela.alertar.explicacao']} </td> </tr>
+		        <tr> <td id="salvarShareLinksTD" align="center" colspan="2" /> </tr>
+		        <tr height="10"></tr>
+		        <tr>
+		        	 <td rowspan="2" align="right"> <a onclick="alterarFormato();toggleOpcaoAreasRisco('salvarFormato');" > <img src="images/resize.png"  /> </a> </td>
+		        	 <td class="areasLink"> <a onclick="alterarFormato();toggleOpcaoAreasRisco('salvarFormato');" > #{messages['areasrisco.janela.limites']} </a> </td> </tr>
+		        <tr> <td class="areasHint"> #{messages['areasrisco.janela.limites.explicacao']} </td> </tr>
+		        <tr> <td id="salvarFormatoAreaRiscoTD" align="center" colspan="2" /> </tr>
+		        <tr height="10"></tr>
+		        
+		    </table>
+	    </rich:panel>
+	</div>
+	
+	<div id="divInvisivel" style="visibility:hidden; position:absolute" >
+		<div id="salvarAreaRiscoDIV" >
+			<input id="nomeAreaInput" type="text" />
+			<button onclick="salvarAreaRisco();fecharOpcaoAreasRisco('salvar')"> #{messages['comum.gravar']} </button>
+		</div>
+		<div id="salvarFormatoAreaRiscoDIV" >
+			#{messages['areasrisco.janela.limites.dica']} 
+			<button onclick="editarFormatoAreaRisco();fecharOpcaoAreasRisco('salvarFormato');"> #{messages['comum.confirmar']} </button>
+		</div>
+		<div id="editarNomeAreaRiscoDIV" >
+			<input id="editarNomeInput" type="text" />
+			<button onclick="editarNomeAreaRisco();fecharOpcaoAreasRisco('editarNome');"> #{messages['comum.confirmar']} </button>
+		</div>
+		<div id="editarFormatoAreaRiscoDIV" >
+			#{messages['areasrisco.janela.limites.dica']} 
+			<button onclick="editarFormatoAreaRisco();fecharOpcaoAreasRisco('editarFormato');"> #{messages['comum.confirmar']} </button>
+		</div>
+		<div id="excluirAreaRiscoDIV" >
+			#{messages['areasrisco.janela.excluir.confirma']} 
+			<button onclick="excluirAreaRisco();fecharOpcaoAreasRisco('excluir');"> #{messages['webapp.btn.sim']} </button>
+			<button onclick="fecharOpcaoAreasRisco('excluir');"> #{messages['webapp.btn.cancelar']} </button>
+		</div>
+	</div>
+	
+	<div id="janelaEditarAreasRisco" class="divJanelaAreaRisco" style="left:5%; top:20%">
+		<rich:panel style="width:100%; height:100%;	border-width:medium;	border-color:#3a6bb4; border-style:solid;">
+			<f:facet name="header">
+	           <h:panelGroup>
+	           	<table width="100%" class="headerJanelaAreaRisco" ><tr>
+	           		<td id="editarAreaRiscoTituloTD" align="center" style="width:100%"> </td>
+	                <td align="right"><h:graphicImage value="/images/close.gif" onclick="fecharJanelaAreaRisco('Editar')" style="cursor:pointer;"/></td>
+	            </tr></table>
+	           </h:panelGroup>
+	       	</f:facet>
+			<table width="100%" class="areas">
+				<tr> <td colspan="2" width="100%" style="vertical-align:bottom">
+					 <img src="images/areaRisco.png" style="width:45px; height:45px; float:left"/> 
+					 <p class="areasTitle" id="editarAreaRiscoDescTD">  </p> </td>  </tr>
+				<tr> <td colspan="2" style="font-size:20; font-weight:bold;"> #{messages['areasrisco.janela.vcpode']} </td> </tr>
+				<tr height="10"></tr>
+				<tr> 
+					 <td rowspan="2" align="right">	<a onclick="atualizaNomeInput();toggleOpcaoAreasRisco('editarNome');" > <img src="images/tag.png" style="height: 35px;width: 35px;" /> </a> </td>
+					 <td class="areasLink"> <a onclick="atualizaNomeInput();toggleOpcaoAreasRisco('editarNome');" > #{messages['areasrisco.janela.renomear']} </a> </td> </tr>
+				<tr> <td class="areasHint"> #{messages['areasrisco.janela.renomear.explicacao']} </td> </tr>
+				<tr> <td id="editarNomeAreaRiscoTD" align="center" colspan="2" /> </tr>
+				<tr height="10"></tr>
+				<tr> 
+					 <td rowspan="2" align="right">	<a onclick="toggleOpcaoAreasRisco('excluir')" > <img src="images/remove.png" style="height: 35px;width: 35px;" /> </a> </td>
+					 <td class="areasLink"> <a onclick="toggleOpcaoAreasRisco('excluir')" > #{messages['areasrisco.janela.excluir']} </a> </td> </tr>
+				<tr> <td class="areasHint"> #{messages['areasrisco.janela.excluir.explicacao']} </td> </tr>
+				<tr> <td id="excluirAreaRiscoTD" align="center" colspan="2" /> </tr>
+				<tr height="10"></tr>
+		        <tr>
+		        	 <td rowspan="2" align="right"> <a onclick="toggleShareLinks(polyEditando, 'editar');"  > <img src="images/warning.png"  /> </a> </td>
+		        	 <td class="areasLink"> <a onclick="toggleShareLinks(polyEditando, 'editar');"  > #{messages['areasrisco.janela.alertar']} </a> </td> </tr>
+		        <tr> <td class="areasHint"> #{messages['areasrisco.janela.alertar.explicacao']} </td> </tr>
+		        <tr> <td id="editarShareLinksTD" align="center" colspan="2" /> </tr>
+		        <tr height="10"></tr>
+		        <tr>
+		        	 <td rowspan="2" align="right"> <a onclick="alterarFormato();toggleOpcaoAreasRisco('editarFormato');" > <img src="images/resize.png"  /> </a> </td>
+		        	 <td class="areasLink"> <a onclick="alterarFormato();toggleOpcaoAreasRisco('editarFormato');" > #{messages['areasrisco.janela.limites']} </a> </td> </tr>
+		        <tr> <td class="areasHint"> #{messages['areasrisco.janela.limites.explicacao']} </td> </tr>
+		        <tr> <td id="editarFormatoAreaRiscoTD" align="center" colspan="2" /> </tr>
+		        <tr height="10"></tr>
+		        
+		    </table>
+	    </rich:panel>
+	</div>
+	
+</body>
+</html>

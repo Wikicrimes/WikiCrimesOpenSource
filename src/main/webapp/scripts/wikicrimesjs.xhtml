@@ -1,0 +1,1255 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC
+"-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:c="http://java.sun.com/jstl/core"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:t="http://myfaces.apache.org/tomahawk">
+
+	<div style="visibility:hidden; position:absolute" >
+		<h1>Wikicrimes - mapping crimes collaboratively</h1>
+	</div>
+		
+	<f:loadBundle var="messages" basename="messages" />
+	
+	<f:loadBundle var="messages" basename="messages" />
+	<script>
+	 var chamouLoadMapa = false;
+	 var podeFecharModal = true;
+	 function loadMapa() {
+	 		chamouLoadMapa=true;
+	 		
+			<c:if test="#{not empty usuario}">					
+				<c:if test="#{usuario.cidade == null or usuario.cidade == '' or usuario.lat == null or usuario.lng == null or usuario.lng == '' or usuario.lat == ''}">
+					load(#{filtroForm.latMapa},#{filtroForm.lngMapa},#{filtroForm.zoomMapa});
+					mostrarModalSolicitandoCidade();
+					return;
+				</c:if>
+				load(#{usuario.lat},#{usuario.lng},13);
+					
+			</c:if>    
+			<c:if test="#{empty usuario}">
+				load(#{filtroForm.latMapa},#{filtroForm.lngMapa},#{filtroForm.zoomMapa});
+				
+				if("#{rpx_usuario_sem_email}" == "sim"){
+					mostrarModalSolicitandoEmail();
+		 		}		
+			</c:if>
+		} 
+	</script>
+	<script type="text/javascript"><!-- 
+	/* <![CDATA[ */
+		var googleMapsKey = "ABQIAAAAg4v-Pz31X7RpxlFPsEIYsRTazo9qQMtEEaWMpOq8Zpopb9nT3RT_PrvaAoazyXGxX2pPie38TEPKIQ";	
+		var msgNaoPodeCancelar = '#{messages["nao.pode.cancelar"]}'; 	
+		if (GBrowserIsCompatible()) {
+			//*********************** Area INICIO ****************************
+			var labelArea = null;
+			var vaiEditarArea = false;
+			var estaRemovendoPoligono = false;
+			var estaRegistrandoArea = false;
+			var estaDesenhandoArea = false;
+			var labelAreaAviso = null;
+			var polygon = null;
+			var eventoEndLine = null;
+			var eventoFecharJanela = null;
+			var eventoLineUpdate = null;
+			var eventoClickArea = null;
+			var eventoMoveMouse = null;
+			var eventoClickMap = null;
+			var excedeuLimite = false;
+			var hintAjudaArea = null;
+		
+			//*********************** Area FIM ****************************
+			
+			
+			    var qtd_roubos = 0;
+				var qtd_furtos = 0;
+				var qtd_outros = 0;
+				var qtd_denuncias = 0;
+				var renovaSessao = false;
+				var ignoraData;
+				var clusterer;
+				var map;
+				var crime;
+				var crime2;
+				var id;
+				var podeRegistrar = false;
+				var podeCarregarCrimes = true; // boolean para checar se deve carregar crimes ou nao
+				var lastBounds; // guarda os ultimos bounds 
+				var limpaTela = true;
+				var idTipoCrime = 0;
+				var idSubTipoCrime = 0;
+				var geocoder;
+				var crimesAtuais = {};
+				var ii = 0;
+				var IE=false;
+				var tempX = 0;
+				var tempY = 0;
+				var showWindow=false;
+				var lastZoom;
+				var atualiza=true;
+				var atualizaGrupos=true;
+				var filtrou=false;
+				var mudouZoom;
+
+				browser=navigator.appName;
+				check=browser.indexOf("Microsoft");
+				if (check!=-1) IE=true;
+			} else {
+				alert('#{messages["webapp.maps.nao.compativel"]}');
+			}
+			
+			function mostrarModalSolicitandoEmail(){				
+				displayMessage('./falhaLoginRpx.html', 420, 200,'#{messages["message.wikicrimes"]}');
+			}
+
+			function mostrarModalSolicitandoCidade(){				
+				displayMessage('./informaCidade.html', 420, 280,'#{messages["message.wikicrimes"]}');
+			}	
+					
+			function removerPoligono(){
+				estaRemovendoPoligono = true;
+				if(!map.getInfoWindow().isHidden())
+					map.closeInfoWindow();
+				estaRegistrandoArea = false;
+				if(polygon!=null){
+					if(polygon.getVertexCount()==0){
+						polygon.insertVertex(0,  new GLatLng(88, 55));
+						polygon.insertVertex(1,  new GLatLng(88, 54));
+						polygon.insertVertex(2,  new GLatLng(88, 53));
+						polygon.insertVertex(3,  new GLatLng(88, 52));
+						GEvent.trigger(polygon,'endline');
+					}					
+					map.removeOverlay(polygon);
+					polygon = null;
+				}	
+				if(eventoEndLine != null){
+					GEvent.removeListener(eventoEndLine);
+					eventoEndLine = null;
+				}
+				if(eventoLineUpdate != null){
+					GEvent.removeListener(eventoLineUpdate);
+					eventoLineUpdate = null;
+				}
+				if(eventoClickArea != null){
+					GEvent.removeListener(eventoClickArea);
+					eventoClickArea = null;
+				}	
+				if(eventoClickMap!=null){
+					GEvent.removeListener(eventoClickMap);
+					eventoClickMap = null;
+				}
+				if(eventoFecharJanela!=null){
+					GEvent.removeListener(eventoFecharJanela);
+					eventoFecharJanela = null;
+				}		
+				if(labelArea != null){ 
+					map.removeOverlay(labelArea);		
+				}
+				if(labelAreaAviso!=null){
+					map.removeOverlay(labelAreaAviso);
+				}	
+				labelArea = null;
+				labelAreaAviso = null;	
+				removeHintAjudaArea(); 
+				//pontosLatLngArea=new Array();
+				//pontosArea=new Array();
+				estaRemovendoPoligono = false;
+			}
+			function removeHintAjudaArea(){
+				if(eventoMoveMouse!=null){
+					GEvent.removeListener(eventoMoveMouse);
+					eventoMoveMouse = null;
+				}
+				if(hintAjudaArea!=null){
+					map.removeOverlay(hintAjudaArea);
+					hintAjudaArea = null;
+				}	
+			}
+
+			function mostrarPainelLogin(url, a){
+				openModal(url, 742, 320,'Login', a);
+				return false;
+			}	
+
+			function mostrarCarregandoPequeno(){
+				document.getElementById("loadingPequeno").style.visibility="visible";
+			}
+
+			function escondeCarregandoPequeno(){
+				document.getElementById("loadingPequeno").style.visibility="hidden";
+			}
+
+			function plotaEnderecoMap(response) {
+				if (!response || response.Status.code != 200) {
+			    	alert("#{messages['menu.mensagem.erro']}");
+			    } 
+			    else {
+			    	  //informando tutor que o usuario ja usou a busca por endereco	  
+			    	  jaMostrouAjudaPesquisa = true;
+				      place = response.Placemark[0];
+				      point = new GLatLng(place.Point.coordinates[1],place.Point.coordinates[0]);
+				      var html=place.address  + ' <br/> ' + '<b>Codigo Pais:</b> ' + place.AddressDetails.Country.CountryNameCode;
+			
+				      switch(place.AddressDetails.Accuracy)
+					  {
+							case 0:
+								zoom=#{filtroForm.zoomMapa};
+								  break;    
+							case 1:
+								zoom=4;
+							  break;
+						 	case 2:
+								zoom=6;
+							  break;
+							case 3:
+								zoom=12;
+							  break;
+							case 4:
+								zoom=13;
+							  break;
+							case 5:
+								zoom=14;
+							  break;
+							case 6:
+								zoom=16;
+							  break;
+							case 7:
+								zoom=17;
+							  break;
+							case 8:
+								zoom=17;
+							  break;
+							default:
+								zoom=#{filtroForm.zoomMapa};		
+						}
+				      	isUpdatingMap = true;
+				      	map.setZoom(zoom);
+				      	isUpdatingMap = false;
+				      	map.setCenter(point);				      	
+				      	map.openInfoWindowHtml(point,html);
+				      	
+			      }
+			}
+
+			function preparaRequisicaoMudandoData(point, zoom){
+				var temp=podeCarregarCrimes;
+			   	podeCarregarCrimes=false;
+			   	if(point != null)			  
+		        	map.setCenter(point,zoom);		        
+			   	ignoraData="false";
+			   	filtrou=false;
+		   	  	tempDataMaisAntiga= new Date();
+		        atualizaMapa();
+		      	podeCarregarCrimes=temp;
+			}	
+		   
+			function createLabelTemp(point, tipoLabel) {
+				var icone = new GIcon();
+				var marker;
+				//icone.shadow = "./images/baloes/shadow50.png";
+				
+				if (tipoLabel == 1) {
+					icone.image = "./images/hints/area/"+"#{messages['webapp.area.hint.img1']}";
+					icone.iconSize = new GSize(276, 22);
+				}
+				if (tipoLabel == 2) {
+					icone.image = "./images/hints/area/"+"#{messages['webapp.area.hint.img2']}";
+					icone.iconSize = new GSize(276, 22);
+				}
+				if (tipoLabel == 3) {
+					icone.image = "./images/hints/area/"+"#{messages['webapp.area.hint.img3']}";
+					icone.iconSize = new GSize(398, 22);
+				}
+				
+				
+				icone.iconAnchor = new GPoint(2, 34);
+				icone.infoWindowAnchor = new GPoint(9, 2);
+				marker = new CrimeMarker(point, {draggable:true, icon:icone});
+				marker.idTipoCrime = tipoLabel;
+				return marker;
+			}
+			
+			function startShape() {
+			  estaRegistrandoArea = true;
+			  var contCliques = 0;
+			  eventoClickMap = GEvent.addListener(map, "click", function (overlay, latLng) {			  	 	
+			     estaDesenhandoArea = true;
+			     if(contCliques==0){
+			     	removeHintAjudaArea();
+			     	hintAjudaArea = createLabelTemp(latLng, 2);
+			  		map.addOverlay(hintAjudaArea);
+			  		eventoMoveMouse=GEvent.addListener(map, "mousemove", function (latLng) {
+					
+					if (!hintAjudaArea) {
+						hintAjudaArea = createLabelTemp(latLng, 2);
+						map.addOverlay(hintAjudaArea);
+					} else {
+						hintAjudaArea.setLatLng(latLng);
+				  	}
+						
+				  });
+			     }
+			     if(contCliques==2){
+			     	removeHintAjudaArea();
+			     	hintAjudaArea = createLabelTemp(latLng, 3);
+			  		map.addOverlay(hintAjudaArea);
+			  		eventoMoveMouse=GEvent.addListener(map, "mousemove", function (latLng) {
+					
+					if (!hintAjudaArea) {
+						hintAjudaArea = createLabelTemp(latLng, 3);
+						map.addOverlay(hintAjudaArea);
+					} else {
+						hintAjudaArea.setLatLng(latLng);
+				  	}
+						
+				  });
+			     }
+				 contCliques++;
+			  });
+			  hintAjudaArea = createLabelTemp(map.getCenter(), 1);
+			  map.addOverlay(hintAjudaArea);
+			  eventoMoveMouse=GEvent.addListener(map, "mousemove", function (latLng) {				
+				if (!hintAjudaArea) {
+					hintAjudaArea = createLabelTemp(latLng, 1);
+					map.addOverlay(hintAjudaArea);
+				} else {
+					hintAjudaArea.setLatLng(latLng);
+				}
+					
+			  });
+			  //select("shape_b");
+			  //var color = getColor(false);
+			  polygon = new GPolygon([], 'blue', 2, 0.7, '#000080', 0.2);
+			  /*GEvent.addListener(polygon, "cancelline", function() {
+			    	alert("cancelline");
+			  });*/
+			  startDrawing("Shape 1", function() {
+			    //alert(polygon.getArea());
+			  	if(polygon != null){  
+				    var color;
+				    if(polygon.getArea()>2000000.0){
+				    	color = 'red'; 
+				    	excedeuLimite = true;   	
+				    }	
+				    else{
+				    	color = 'blue';
+				    	excedeuLimite = false;    	
+				    }	
+				    if(labelArea!=null){
+				    	map.removeOverlay(labelArea);    	
+				    }
+				    if(labelAreaAviso!=null){
+						map.removeOverlay(labelAreaAviso);
+					}		    
+				    var maxLatIndice = 0;	
+				    var maxLatitude = polygon.getVertex(0).lat();
+				    for(var i = 1 ; i < polygon.getVertexCount() ; i++){
+				    	if(polygon.getVertex(i).lat()>maxLatitude){
+				    		maxLatIndice = i;
+				    		maxLatitude = polygon.getVertex(i).lat();
+				    	}
+				    		
+				    }   
+				    if(polygon.getArea()>2000000.0){
+				    	labelAreaAviso = new ELabel(polygon.getVertex(maxLatIndice), '<div style="background-color:#ffffff;border:1px solid '+color+';color:'+color+';text-align:center;width:268px;height:14px"> #{messages["webapp.area.erro.limiteexcedido.tam.area2"]}</div>', null, new GSize(6,-30), 75);
+				    	map.addOverlay(labelAreaAviso);    	
+				    }
+				    else{
+				    	labelAreaAviso = new ELabel(polygon.getVertex(maxLatIndice), '<div style="background-color:#ffffff;border:1px solid '+color+';color:'+color+';text-align:center;width:268px;height:14px"> #{messages["webapp.area.label.clique.na.area.registra.la"]}</div>', null, new GSize(6,-30), 75);
+				    	map.addOverlay(labelAreaAviso);
+				    }
+				    labelArea = new ELabel(polygon.getVertex(maxLatIndice), '<div style="background-color:#ffffff;border:1px solid '+color+';color:'+color+';text-align:center;width:220px;height:14px"> #{messages["webapp.area.tamanho"]} '+ (Math.round(polygon.getArea() / 10000) / 100) + "km2" +'.</div>', null, new GSize(6,-10), 75);
+				    map.addOverlay(labelArea);
+				}        
+			  }, '#ff0000');
+			}
+			
+			function startDrawing(name, onUpdate, color) {
+			 map.addOverlay(polygon);
+			  polygon.enableDrawing({});
+			  polygon.enableEditing({onEvent: "mouseover"});
+			  polygon.disableEditing({onEvent: "mouseout"});
+			 
+			  eventoEndLine = GEvent.addListener(polygon, "endline", function() {    
+			  	if(eventoClickMap!=null){
+					GEvent.removeListener(eventoClickMap);
+					eventoClickMap = null;
+				}
+			  	estaDesenhandoArea = false;
+			  	removeHintAjudaArea();
+			  	if(!estaRemovendoPoligono)
+			  		registrarArea();  	 
+			    eventoLineUpdate = GEvent.bind(polygon, "lineupdated", null, onUpdate);
+			    eventoClickArea = GEvent.addListener(polygon, "click", function(latlng, index) {
+			    	if(!estaRemovendoPoligono)
+			    		registrarArea();
+			    });
+			  });
+			}
+			
+			function registrarArea(){
+				vaiEditarArea = false;
+				if(polygon.getArea()>2000000.0){
+					excedeuLimite = true;
+				}
+				else{
+					excedeuLimite = false;
+				}
+				if(!excedeuLimite){	 
+			      var latitudes='';
+			      var longitudes='';
+			      for(var i=0 ; i<polygon.getVertexCount();i++){
+					if(i!=polygon.getVertexCount()-1){	
+						if(i==polygon.getVertexCount()-2){
+							latitudes+= polygon.getVertex(i).lat();
+							longitudes+= polygon.getVertex(i).lng();
+						}
+						else{
+							latitudes+= polygon.getVertex(i).lat()+';';
+							longitudes+= polygon.getVertex(i).lng()+';';
+						}
+					}		
+				  }
+			      var myHtml = "<iframe src='./registrarArea.html?latitudes="+ latitudes  +"&longitudes="+ longitudes  +"&areaKm2="+polygon.getArea()+"' width='400' height='160' frameborder='0'></iframe>";
+				  map.openInfoWindowHtml(polygon.getVertex(0),myHtml);	   
+				  eventoFecharJanela=GEvent.addListener(map,"infowindowbeforeclose", function(overlay,latlng) {
+					if (overlay) {
+						// ignore if we click on the info window
+						return;
+					}else{
+						if(vaiEditarArea){
+							polygon.enableEditing({onEvent: "mouseover"});
+				  			polygon.disableEditing({onEvent: "mouseout"});							
+						}
+						else{
+							selecionarComando(map, 'mao');		
+							removerPoligono();
+						}
+					}				
+				  });	
+			      polygon.disableEditing({onEvent: "mouseover"});  
+			   	}
+			}
+			//plotar no mapa minhas areas 
+			function plotaAreaMapaDaListagem(nome, pontosTexto){
+				//polyListArea.insertVertex(0,  new GLatLng(88, 55));						 
+				var arrayPontos = pontosTexto.split('|');
+				var arrayLatLng = null;
+				var cont = 0;
+				var arrayPontosLatLng = new Array();				
+				for(var i = 0; i < arrayPontos.length;i++){
+					if(arrayPontos[i]!=null && arrayPontos[i]!=''){					
+						arrayLatLng = arrayPontos[i].split(';');
+						arrayPontosLatLng[cont] = new GLatLng(arrayLatLng[0], arrayLatLng[1]);
+						//polyListArea.insertVertex(cont,  new GLatLng(arrayLatLng[0], arrayLatLng[1]));
+						cont++;
+						arrayLatLng = null;
+					}
+					
+				}
+				arrayPontosLatLng[cont+1] = arrayPontosLatLng[0];
+				var polyListArea = new GPolygon(arrayPontosLatLng, 'blue', 2, 0.7, '#000080', 0.2);
+				var label = new ELabel(polyListArea.getVertex(0), '<div style="background-color:#ffffff;border:1px solid blue;color:blue;width:120px;height:14px"> #{messages["webapp.area.clique.para.fechar"]} </div>', null, new GSize(6,-10), 75);
+				GEvent.addListener(polyListArea, "click", function(latlng, index) {
+			  		map.removeOverlay(label);
+			  		polyListArea.hide();
+			  		
+			  	});  
+			    GEvent.addListener(polyListArea, "mouseover", function(latlng, index) {
+			     	map.addOverlay(label);
+			    });
+			    GEvent.addListener(polyListArea, "mouseout", function(latlng, index) {
+			     	map.removeOverlay(label);
+			    });
+			    closeModal('modal');
+				map.addOverlay(polyListArea);					
+				map.setCenter(polyListArea.getVertex(0),zoomLimiteInfMarcadores);
+			}				
+
+			
+			  // Call this function when the page has been loaded
+			function load(_lat, _long, _zoom) {
+				  
+				document.getElementById("loading").style.visibility = "visible";
+				map = new GMap2(document.getElementById("map"));
+				map.addControl(new LegendaWikicrimes());
+				
+				map.addControl(new ComandoEmbed());
+				map.setCenter(new GLatLng(_lat, _long), _zoom);
+					
+				//mostraComandosLogado(map);
+				selecionarComando(map, 'mao');
+				map.setUIToDefault();
+				map.disableScrollWheelZoom();
+				new GKeyboardHandler(map);
+			
+				// Marcador Temporário
+				var infoTT = document.createElement("div");
+				var posMarcador = null;
+
+				//evento passado por parametro
+				eventId = '#{param.eventId}';
+				eventType = '#{param.eventType}';
+				/*TEMP*/if(!eventId){ eventId = '#{param.idcrime}'; eventType = 'crime';}
+				/*TEMP*/if(!eventId){ eventId = '#{param.idrelato}'; eventType = 'relato'; }
+				idConfirmacao = '#{param.idconf}';
+				
+				setPodeRegistrar(false, 0);
+				GEvent.addListener(map, "mousemove", function (latLng) {
+					if (podeRegistrar) {
+						if (!crime) {
+							crime = createMarkerTemp(latLng, idTipoCrime);
+							map.addOverlay(crime);
+						} else {
+							crime.setLatLng(latLng);
+
+							// Tooltip para o marcador temporário criado - INICIO
+							// Calcula posição da tooltip
+							var point = map.getCurrentMapType().getProjection().fromLatLngToPixel(map.fromDivPixelToLatLng(new GPoint(0,0),true),map.getZoom());
+							var offset = map.getCurrentMapType().getProjection().fromLatLngToPixel(crime.getPoint(),map.getZoom());
+							var anchor = crime.getIcon().iconAnchor;
+							var width = crime.getIcon().iconSize.width;
+							var height = infoTT.clientHeight;
+							var pos = new GControlPosition(G_ANCHOR_TOP_LEFT, new GSize(offset.x - point.x - anchor.x + width, offset.y - point.y -anchor.y -height));
+
+				      	  	infoTT.innerHTML = "<div class='infoMarcadorTemporario'>#{messages["marcador.temporario.toolTip.texto"]}</div>";
+
+							// Plota toolTip no mapa
+				      	  	pos.apply(infoTT);
+				      	  	map.getPane(G_MAP_FLOAT_PANE).appendChild(infoTT);
+				      	  					      	  	
+				    	  	infoTT.style.visibility="visible";
+				    	  	// Tooltip para o marcador temporário criado - FIM
+				    	  	
+						}
+					}
+				});
+				GEvent.addListener(map, "singlerightclick", function (overlay, latLng) {
+					if (podeRegistrar) {
+						setPodeRegistrar(false, 0);
+					}
+
+					// Esconde toolTip do marcador temporário.
+					infoTT.style.visibility="hidden";		
+				});
+				
+				GEvent.addListener(map,"infowindowbeforeclose", function(overlay,latlng) {
+					if(crime2){
+						map.removeOverlay(crime2);
+						crime2=null;
+					}	
+				});
+				
+				GEvent.addListener(map, "click", function (overlay, latLng) {
+					
+					//*********************** ROTAS SEGURAS INICIO ****************************				
+					//contextmenu.style.visibility="hidden";
+					//*********************** ROTAS SEGURAS FIM ****************************
+				
+					if (podeRegistrar) {
+						podeCarregarCrimes=false;	
+						crime2 = createMarker(latLng, idTipoCrime);
+						//tive que comentar o markermanager pois dava erro quando utilizava o modo hibrido, adiciona com overlay e depois removo
+						map.addOverlay(crime2);
+						
+						
+						if (idTipoCrime == 6)
+							crime2.registrarRelato(idTipoCrime, idSubTipoCrime);
+						else
+							crime2.registrarCrime(idTipoCrime, idSubTipoCrime);
+							
+						crime2.disableDragging();
+						map.enableDragging();
+						
+						atualiza=true;
+						atualizaGrupos=true;
+					}
+					setPodeRegistrar(false, 0);
+
+					// Esconde toolTip do marcador temporário.
+					infoTT.style.visibility="hidden";
+				});
+				
+				GEvent.addListener(map, "moveend", function() {
+					if (!isUpdatingMap) {
+			            limpaTela=false;
+					 	atualizaMapa();
+						if(map.getZoom() >= 15) showDivComment();
+						else hideDivComment();
+				  	}
+				});
+
+				GEvent.addListener(map, "zoomend", function (overlay, latLng) {
+					mudouZoom = true;
+					if(map.getZoom() >= 15) showDivComment();
+					else hideDivComment();
+					//GEvent.trigger(map,"moveend");
+				});
+				
+				//setTimeout(reqRenovaSessao,60000*9+30000);
+				
+			//*********************** Kernel Map INICIO ****************************	
+				ativaMapaKernel(true);
+				exibirMinhasAreas();
+				//map.addControl(new KernelMapTypeControl());
+			//*********************** Kernel Map FIM ****************************	
+			//*********************** ROTAS SEGURAS INICIO ****************************
+			//menu popup pra desenvolvimento, c testes pra rota segura, etc
+				//controleMenu(map);
+			//*********************** ROTAS SEGURAS FIM ****************************
+
+				GEvent.trigger(map,"moveend");
+			}
+			
+			function reqRenovaSessao(){
+				if(renovaSessao){	
+					http_request = GXmlHttp.create();
+				    if (http_request.overrideMimeType) {
+				    	http_request.overrideMimeType('text/xml');
+				    }
+				
+				    //Espera retorno do servidor
+				    http_request.open('GET', 'RenovaSessao', true);
+					http_request.onreadystatechange = recuperaTxt;
+					http_request.send(null);
+				}	
+			}
+			
+			function recuperaTxt() {
+			
+				if (http_request.readyState == 4) {
+				    if (http_request.status == 200) {
+						var documento = http_request.responseText;
+						linhas = documento.split("\n");
+						//alert(linhas[0]);
+						if (linhas.length > 1){
+								
+							
+				       	}						          
+					}
+					else {
+				    	alert('Erro na requisição');
+				    }
+				}
+				renovaSessao=false;
+				setTimeout(reqRenovaSessao,60000*9+30000);
+			}
+			
+			function zoomIn(i) {				
+				var marker = crimesAtuais[i];				
+				map.setCenter(marker.getPoint(), map.getZoom() + 5);
+				GEvent.trigger(marker, "click");				
+			}
+			function zoomOut(i) {
+				var marker = crimesAtuais[i];
+				map.setCenter(marker.getPoint(), map.getZoom() - 5);
+				GEvent.trigger(marker, "click");
+			}
+			function zoomInGroup() {
+				map.setCenter(map.getCenter(),6);
+				map.setCenter(map.getCenter(),map.getZoom()-1);
+			
+			}
+			function zoomOutGroup() {
+			
+			}
+			function setPodeRegistrar(valor, idTipo, idSub) {	
+				if(!estaDesenhandoArea){
+					podeRegistrar = valor;
+					idTipoCrime = idTipo;
+					idSubTipoCrime = idSub;
+					
+					if (podeRegistrar) {
+						removerPoligono();
+					    selecionarComando(map, 'nenhum');
+						map.disableDragging();
+									// alert('Mova o mouse ao local do crime');
+						if (crime != null) {
+							crime.hide();
+						}
+						
+						marcarMapaPrincipal(localizacao);
+						
+					} else {
+						
+						if (crime != null) {
+							crime.hide();
+						}
+						crime = null;
+						map.enableDragging();
+						tipoCrimeSel = 0;
+						tipoVitimaSel = 0;
+					}
+				}	
+			}
+			function showLocal() {
+				var endereco = document.getElementById("pesquisa").value;
+				if (!geocoder) {
+					geocoder = new GClientGeocoder();
+				}
+				geocoder.getLocations(endereco, plotaEnderecoMap);
+				geocoder = null;				
+			}			
+			
+			function mostraDialogMapa(idCrime) {
+				displayMessage("./abuso.html?idCrime=" + idCrime,480,320,'Reporte de Abuso - WikiCrimes.org');
+			}
+			function mostraDialogMapaRelato(idRelato) {
+				displayMessage("./abuso.html?idRelato=" + idRelato,480,320,'Reporte de Abuso - WikiCrimes.org');
+			}
+			/**
+			*
+			*/
+			function CrimeMarker(latlng, opts) {
+				this.latlng = latlng;
+				this.idCrime = 0;
+				this.registrado = 0;
+				this.evento = 0;
+				this.texto="";
+				GMarker.apply(this, arguments);
+			}
+			/**
+			*
+			*/
+			CrimeMarker.prototype = Object.extend(new GMarker(new GLatLng(0, 0)), {initialize:function (map) {
+				GMarker.prototype.initialize.call(this, map);
+			}, setIdCrime:function (i) {
+				this.idCrime = i;
+			}, setEvento:function (i) {
+				this.evento = i;
+			}, getEvento:function (i) {
+				return this.evento;
+			}, setIdTipoCrime:function (i) {
+				this.idTipoCrime = i;
+			}, setRegistrado:function (i) {
+				this.registrado = i;
+			}, getRegistrado:function (i) {
+				return this.registrado;
+			}, getIdCrime:function () {
+				return this.idCrime;
+			}, getIdTipoCrime:function () {
+				return this.idTipoCrime;				
+			}, registrarCrime:function (idTipoCrime, idSubTipoCrime) {
+				var latitude = this.getLatLng().lat();
+				var longitude = this.getLatLng().lng();
+				//width='500' height='180'
+				idTipoCrime = 5;
+				idSubTipoCrime = 1;
+				//var myHtml = "<iframe src='./registrarCrime.html?tipoCrime=" + idTipoCrime + "&tipoVitima=" + idSubTipoCrime + "&latitude=" + latitude + "&longitude=" + longitude + "' width='515' height='205' frameborder='0'></iframe>";
+				var myHtml = "<iframe src='./registrarCrime.html?latitude=" + latitude + "&longitude=" + longitude + "' width='515' height='205' frameborder='0'></iframe>";
+				this.openInfoWindowHtml(myHtml, 600);
+			}, confirmaCrime:function (idConfirmacao) {
+				var latitude = this.getLatLng().lat();
+				var longitude = this.getLatLng().lng();
+				var myHtml = "<iframe src='./confirmaCrime.html?idConfirmacao=" + idConfirmacao + "' width='400' height='180' frameborder='0'></iframe>";
+				this.openInfoWindowHtml(myHtml, 400);
+			},confirmaRelato:function (idConfirmacao) {
+				var latitude = this.getLatLng().lat();
+				var longitude = this.getLatLng().lng();
+				var myHtml = "<iframe src='./confirmaRelato.html?idConfirmacaoRelato=" + idConfirmacao + "' width='400' height='180' frameborder='0'></iframe>";
+				this.openInfoWindowHtml(myHtml, 400);
+			}, mostrarDados:function () {
+				if(this.idTipoCrime != 7){
+					podeCarregarCrimes = false;
+					var myHtml = "<iframe src='./mostrarDados.html?idCrime=" + this.idCrime + "' width='420' height='150' frameborder='0' style='z-index: 98;'></iframe>";
+					var myHtml2 = "<iframe src='./mostrarInformacoes.html?idCrime=" + this.idCrime + "' width='420' height='150' frameborder='0' style='z-index: 98;' ></iframe>";
+					this.openInfoWindowTabsHtml([new GInfoWindowTab('#{messages["crimes.tabs.titulo.dados"]}', myHtml), 
+					             				new GInfoWindowTab('#{messages["crimes.tabs.titulo.comentarios"]}', myHtml2)]);
+				}
+			}, mostrarDadosRelato:function () {
+				podeCarregarCrimes = false;
+				var myHtml = "<iframe src='./mostrarDadosRelato.html?idRelato=" + this.idCrime + "' width='400' height='150' frameborder='0' style='z-index: 98;'></iframe>";
+				this.openInfoWindowHtml(myHtml, 600);
+			}, mostrarGraficos:function() {
+					var myHtml = "<iframe src='./mostrarGraficos.html?agrupadorEstado=" + this.texto + "' width='400' height='150' frameborder='0' style='z-index: 98;'></iframe>";
+					this.openInfoWindow(myHtml,400);			
+			}, registrarRelato:function (idTipoRelato, idSubTipoRelato) {
+				var latitude = this.getLatLng().lat();
+				var longitude = this.getLatLng().lng();
+				idSubTipoRelato = '';
+				var myHtml = "<iframe src='./registrarRelato.html?tipoRelato=" + idTipoRelato + "&subTipoRelato=" + idSubTipoRelato + "&latitude=" + latitude + "&longitude=" + longitude + "' width='600' height='180' frameborder='0'></iframe>";
+				this.openInfoWindowHtml(myHtml, 600);
+			}, mostrarDadosDelegacia:function () {
+				podeCarregarCrimes = false;
+				var myHtml = "<iframe src='./mostrarDadosDelegacia.html?chave=" + this.idCrime + "' width='400' height='150' frameborder='0' style='z-index: 98;'></iframe>";
+				this.openInfoWindowHtml(myHtml, 600);
+			}
+			});
+
+			function showMarkerInfo(marker){
+				if(idConfirmacao){
+					if(eventType == 'crime')
+						marker.confirmaCrime(idConfirmacao);
+					else if(eventType == 'relato')
+						marker.confirmaRelato(idConfirmacao);
+				}else{
+					GEvent.trigger(marker, "click");
+				}
+			}
+			
+			/**
+			*
+			*/
+			function createMarker(point, tipoCrime) {
+				var icone = new GIcon();
+				var marker;
+				icone.shadow = "";
+				if (tipoCrime == 7) {
+					icone.iconSize = new GSize(23, 34);
+				}else{
+					icone.iconSize = new GSize(14, 24);
+				}
+				icone.iconAnchor = new GPoint(2, 24);
+				icone.infoWindowAnchor = new GPoint(9, 2);
+				if (tipoCrime) {
+					if (tipoCrime == 1) {
+						icone.image = "./images/baloes/novoMarcadorVermelha.png";
+					}
+					if (tipoCrime == 2) {
+						icone.image = "./images/baloes/novoMarcadorAzul.png";
+					}
+					if (tipoCrime == 3) {
+						icone.image = "./images/baloes/novoMarcadorAzul.png";
+					}
+					if (tipoCrime == 4) {
+						icone.image = "./images/baloes/novoMarcadorVermelha.png";
+					}
+					if (tipoCrime == 5) {
+						icone.image = "./images/baloes/novoMarcadorLaranja.png";
+					}
+					if (tipoCrime == 6) {
+						icone.image = "./images/baloes/novoMarcadorVerde.png";
+					}	
+					if (tipoCrime == 7) {
+						icone.image = "./images/delegacia.png";
+					}	
+					
+				}
+				marker = new CrimeMarker(point, {draggable:true, icon:icone});
+				marker.idTipoCrime = tipoCrime;
+				GEvent.addListener(marker, "click", function () {
+					podeCarregarCrimes=false;											
+					if(marker.idTipoCrime == 6){
+						marker.mostrarDadosRelato();
+					}else{
+						if(marker.idTipoCrime == 7){
+							marker.mostrarDadosDelegacia();
+						}else{
+							marker.mostrarDados();
+						}
+					}
+				});
+				
+				return marker;
+			}
+			function createMarkerId(point, tipoCrime, idCrime, texto) {
+				var marker = createMarker(point, tipoCrime);
+				marker.disableDragging();
+				marker.setIdCrime(idCrime);
+				marker.texto=texto;
+				
+				/* Evento jah eh adicionado no createMarker
+				GEvent.addListener(marker, "click", function () {
+						podeCarregarCrimes=false;	
+					marker.mostrarDados();
+				});
+				*/
+				
+				//GEvent.addListener(marker, "mouseover",	function () {
+				//		mostraTooltip(texto);
+				//});
+				return marker;
+			}
+			function createMarkerGroup(point, texto) {
+				var icone = new GIcon();
+				icone.image = "./images/baloes/vermelhoMais.png";
+				icone.iconSize = new GSize(27, 34);
+				icone.iconAnchor = new GPoint(9, 34);
+				icone.infoWindowAnchor = new GPoint(9, 2);
+				var marker = new CrimeMarker(point, {draggable:false, icon:icone});
+				marker.texto=texto;
+				GEvent.addListener(marker, "mouseover",	function () {
+						mostraTooltip(texto);
+				});
+				GEvent.addListener(marker, "click",	function () {
+						marker.mostrarGraficos();
+				});
+				return marker;
+			}
+			
+			function createMarkerTemp(point, tipoCrime) {
+				var icone = new GIcon();
+				var marker;
+				icone.iconSize = new GSize(23, 34);
+				icone.iconAnchor = new GPoint(2, 34);
+				icone.infoWindowAnchor = new GPoint(9, 2);
+				
+				if (tipoCrime) {
+					if (tipoCrime == 1) {
+						icone.image = "./images/baloes/marcadorTempVermelho.png";
+					}
+					if (tipoCrime == 2) {
+						icone.image = "./images/baloes/marcadorTempAzul.png";
+					}
+					if (tipoCrime == 3) {
+						icone.image = "./images/baloes/marcadorTempAzul.png";
+					}
+					if (tipoCrime == 4) {
+						icone.image = "./images/baloes/marcadorTempVermelho.png";
+					}
+					if (tipoCrime == 5) {
+						icone.image = "./images/baloes/marcadorTempLaranja.png";
+					}
+					if (tipoCrime == 6) {
+						icone.image = "./images/baloes/marcadorTempVerde.png";
+					}					
+				}
+				if(tipoCrime == 0){
+					icone.image = "./images/baloes/marcadorNeutro.png"
+				}
+				
+				marker = new CrimeMarker(point, {draggable:true, icon:icone});
+				marker = new CrimeMarker(point, {draggable:true, icon:icone});
+				marker.idTipoCrime = tipoCrime;
+				return marker;
+			}
+			
+			function mostraTooltip(text){
+				document.getElementById("cursor1").innerHTML=text;
+				showWindow=true;
+			}
+			
+			function limpaCrimesOutOfBounds(id, idRelato) {
+				var mapBounds = map.getBounds();		
+			 //loop para checar crimes fora do viewport apaga todos os crimes fora do viewport com excecao do id
+		 		for (k in crimesAtuais) {
+					if (!mapBounds.contains(crimesAtuais[k].getPoint())){
+						if(crimesAtuais[id]!=crimesAtuais[k] && crimesAtuais[idRelato]!=crimesAtuais[k]){
+							removeComment(k);
+							map.removeOverlay(crimesAtuais[k]);
+							delete crimesAtuais[k];
+						}
+					}
+				}
+			
+			}
+			function escondeTooltip(force) {
+			
+			if (force!=null && force==1)
+			 document.getElementById("cursor1").style.display="none";
+			 	showWindow=false;
+			}
+	 
+			
+			function retornaIdUsuario(){
+				return '#{usuario.idUsuario}';			
+			}
+			
+			function retornaEmailUsuario(){
+				return '#{usuario.email}';			
+			}
+			
+			
+			/*function mostraComandosLogado(mapa){
+				if(#{usuario.perfil.nome == 'CERTIFICADOR'}||#{usuario.perfil.nome == 'ADMINISTRADOR'}){				
+					 mapa.addControl(new ComandoGeradorEmbedded());					 
+				}				
+			}*/
+						
+			function escondeTooltip(force) {
+				if (force!=null && force==1)
+					 document.getElementById("cursor1").style.display="none";
+		 			showWindow=false;
+			}		
+			
+			function mostraHintComandosMapa(msg, top, left){
+				document.getElementById("divHintComandoMapa").style.top = top;
+				document.getElementById("divHintComandoMapa").style.left= left;
+				document.getElementById("divHintComandoMapa").style.visibility = "visible";
+				if(msg == "webapp.area.erro.info.hint.area")  	
+  					document.getElementById("msgHintComandoMapa").innerHTML = '#{messages["webapp.area.erro.info.hint.area"]}';
+  				if(msg == "botoes.title.mover")
+  					document.getElementById("msgHintComandoMapa").innerHTML = '#{messages["botoes.title.mover"]}';
+  				if(msg == "embedded.hint.comando.mapa")
+  					document.getElementById("msgHintComandoMapa").innerHTML = '#{messages["embedded.hint.comando.mapa"]}';
+				if(msg == "tutor.texto.filtro")
+					document.getElementById("msgHintComandoMapa").innerHTML = '#{messages["tutor.texto.filtro"]}';
+				if(msg == "tutor.texto.kml")
+						document.getElementById("msgHintComandoMapa").innerHTML = '#{messages["tutor.texto.kml"]}';
+				if(	msg== "tutor.ajuda.hots.spots")
+						document.getElementById("msgHintComandoMapa").innerHTML = '#{messages["tutor.ajuda.hots.spots"]}';		
+			}
+			
+			function removeHintComandosMapa(){
+				document.getElementById("divHintComandoMapa").style.visibility = "hidden";
+			}			
+			
+			function relatoRegistrado(chave, descricao) {
+			    crimesAtuais[chave] = crime2;
+			 	addComment(chave, descricao);
+			}
+			
+			function addComment(id, descricao){
+				var span = window.parent.document.getElementById('span_'+id);
+				if (span == null) {
+					if(map.getZoom()>=15){
+						var comment = window.parent.document.getElementById('comment');
+						var span = window.parent.document.createElement('span');
+						span.setAttribute('id','span_'+id);
+						span.setAttribute('style', 'style="font-size:14px; color: yellow"');
+						span.innerHTML = '&nbsp;- <a href="#"'+
+										 ' onclick="showRelatedData(\''+id+'\')" style="background-color:#3A5FCD; color:yellow; text-decoration: none; font-style: normal;" onmouseover="highlightComment(\''+id+
+										 '\', true)" onmouseout="highlightComment(\''+id+'\', false)">'+descricao+'</a><br/>';
+					  	comment.appendChild(span);
+					}
+				}	
+			}
+			
+			function removeComment(id){
+				
+				var span = window.parent.document.getElementById('span_'+id);
+				if (span != null) {
+					var div = span.parentNode; 
+					span.parentNode.removeChild(span);
+					if (div.childNodes.length == 1) div.style.display = 'none';
+				}
+				
+			}
+			
+			function showDivComment(){
+				/*var div = window.parent.document.getElementById('comment');
+				if (div != null && map.getZoom() >= 15 && div.childNodes.length > 1) {				 
+					window.parent.document.getElementById('comment').style.display = 'block';
+				}*/
+			}
+			
+			function hideDivComment(){
+				var div = window.parent.document.getElementById('comment');
+				//if (div != null && map.getZoom() < 15) {
+					window.parent.document.getElementById('comment').style.display = 'none';
+				//}
+			}
+			
+			function showRelatedData(id) {
+				 for (k in crimesAtuais) {
+					if(k == id) crimesAtuais[k].mostrarDadosRelato();
+				}
+			}
+
+			function highlightComment(id, highlight) {
+				 var mapBounds = map.getBounds();		
+
+				 for (k in crimesAtuais) {
+					if(k == id){					
+						
+							
+						if (highlight) {
+							crimesAtuais[k].getIcon().image = "./images/baloes/relatoDestaque.png";
+							crimesAtuais[k].getIcon().iconSize = new GSize(42, 68);	
+							crimesAtuais[k].getIcon().iconAnchor = new GPoint(13, 66);							
+						}
+						else {
+							crimesAtuais[k].getIcon().image = "./images/baloes/novoMarcadorVerde.png";
+							crimesAtuais[k].getIcon().iconSize = new GSize(29, 39);
+							crimesAtuais[k].getIcon().iconAnchor = new GPoint(9, 38);
+						}
+						
+					
+					}
+				}
+			}	
+
+			function mostrarCrimeMapa(chave,lat, lng){
+//********************************** KERNEL MAP INICIO *********************************************
+				if(kernelEnabled){
+					desativaMapaKernel();
+				}
+//********************************** KERNEL MAP FIM ************************************************				
+				map.closeInfoWindow();				
+				eventId=chave;
+				eventType='crime';
+				
+			   	if(lat != undefined && lng != undefined){
+				   	var latLngGM = new GLatLng(lat,lng);	
+			        preparaRequisicaoMudandoData(latLngGM, zoomLimiteInfMarcadores);
+			   	}else{
+			   		preparaRequisicaoMudandoData(null, zoomLimiteInfMarcadores);	
+				}				
+			}
+
+			function mostrarRelatoMapa(chave){
+				idconf = null;
+				map.closeInfoWindow();
+				podeCarregarCrimes = false;			
+				idRelato=chave;
+				qtd_roubos = 0;
+				qtd_furtos = 0;
+				qtd_outros = 0;
+				qtd_denuncias = 0;
+				submeteRequisicao();
+			}
+
+			function mostrarCrimeMapaIndicado(chaveCr){
+				idconf = null;
+				map.closeInfoWindow();				
+				podeCarregarCrimes = false;
+				id=chaveCr;
+				qtd_roubos = 0;
+				qtd_furtos = 0;
+				qtd_outros = 0;
+				qtd_denuncias = 0;	
+
+				//alert(chave);
+				var myHtml = "<iframe src='./editarCrime.html?chaveCr=" + chaveCr + "' width='400' height='150' frameborder='0'></iframe>";
+				crimesAtuais[chaveCr].openInfoWindowHtml(myHtml, 600);
+			}
+			
+			function mostrarRelatoMapaIndicado(chave){
+				idconf = null;
+				map.closeInfoWindow();
+				podeCarregarCrimes = false;			
+				idRelato=chave;
+				qtd_roubos = 0;
+				qtd_furtos = 0;
+				qtd_outros = 0;
+				qtd_denuncias = 0;	
+
+				//alert(chave);
+				var myHtml = "<iframe src='./editarRelato.html?chave=" + chave + "' width='400' height='150' frameborder='0'></iframe>";
+				crimesAtuais[chave].openInfoWindowHtml(myHtml, 600);
+			}
+			var statusLegenda='visivel';
+
+			function mostraEscondeLeganda(){
+				if(statusLegenda=='visivel'){
+					statusLegenda = 'invisivel';
+					wikicrimesDiv.innerHTML = htmlLegendaEscondida();
+				}
+				else{
+					statusLegenda='visivel';
+					wikicrimesDiv.innerHTML = htmlLegenda();
+		//*********************** Kernel Map INICIO ****************************
+		//corrigir o bug qd esconde e mostra a legenda do kernel e os numeros zeravam
+					//if(kernelEnabled)
+						//atualizaLegendaKernel();
+		//*********************** Kernel Map FIM ****************************
+				}							
+			}
+
+			function esconderMensagem(){
+				document.getElementById("divAvisosNoMapa").style.visibility = "hidden";
+			}		
+			
+			function mostrarMensagem(descricao, tamanhoTela){
+				document.getElementById("divAvisosNoMapa").style.width = tamanhoTela;							
+				document.getElementById("divInternaAvisosNoMapa").innerHTML=descricao;
+				document.getElementById("divAvisosNoMapa").style.visibility = "visible";
+			}
+
+			function htmlLegendaEscondida(){
+				var html = "<table cellpading='0' cellspacing='0' style='width:100px; padding:4px ;border:1px solid #333333; opacity: .99; -moz-opacity:0.99; filter: alpha(opacity=99); background-color:white;font-family:Arial, sans-serif;  font-size: 11px;'>";
+				html+="     	<tr>";
+				html+="     		<td align='center' colspan='2'> <b>"+ "#{messages['wikicrimes.legenda.mapa']}" +"</b> <img width='12px' height='12px' src='./images/maximizar.png' onclick='mostraEscondeLeganda();' style='font-size: 12px;cursor: pointer;'/></td>";
+				html+="         </tr>"				
+				html += "	</table>";
+				return html;
+			}
+
+			function htmlLegenda(){
+		//*********************** Kernel Map INICIO ****************************
+		//mostrar a legenda do mapa de kernel, se ele tiver ligado
+				if(kernelEnabled)
+					return htmlLegendaKernel();
+				else
+		//*********************** Kernel Map FIM ****************************
+					return htmlLegendaMarcadores();
+			}
+
+			function htmlLegendaMarcadores(){
+				var html = "<table cellpading='0' cellspacing='0' style='width:100px; padding:4px ;border:1px solid #333333; opacity: .99; -moz-opacity:0.99; filter: alpha(opacity=99); background-color:white;font-family:Arial, sans-serif;  font-size: 11px;'>";
+				html+="     	<tr>";
+				html+="     		<td align='center' colspan='2'> <b >"+ "#{messages['wikicrimes.legenda.mapa']}" +"</b> <img width='12px' height='12px' src='./images/maximizar.png' onclick='mostraEscondeLeganda();' style='font-size: 12px;cursor: pointer;'/> </td>";
+				html+="         </tr>"				
+				html+="     	<tr>";
+				html+="     		<td align='center'> <img width='14px' height='24px' src='./images/baloes/novoMarcadorVermelha.png' /> </td> <td> "+ "#{messages['tipocrime.roubo']}" +"  </td>";
+				html+="         </tr>"
+				html+="     	<tr>";
+				html+="     		<td align='center'> <img width='14px' height='24px' src='./images/baloes/novoMarcadorAzul.png' />  </td> <td> "+ "#{messages['tipocrime.furto']}" +"  </td>";
+				html+="         </tr>"
+				html+="     	<tr>";
+				html+="     		<td align='center'> <img width='14px' height='24px' src='./images/baloes/novoMarcadorLaranja.png' />  </td> <td> "+ "#{messages['tipocrime.violencia']}" +"  </td>";
+				html+="         </tr>"
+				html+="     	<tr>";
+				html+="     		<td align='center'> <img width='14px' height='24px' src='./images/baloes/novoMarcadorVerde.png' />  </td> <td> "+ "#{messages['tipocrime.outro']}" +"  </td>";
+				html+="         </tr>"	
+				html += "	</table>";
+				return html;
+			}
+
+			var wikicrimesDiv;
+
+			function LegendaWikicrimes() {
+			}
+			LegendaWikicrimes.prototype = new GControl();
+			
+			LegendaWikicrimes.prototype.initialize = function(map) {
+			  var container = document.createElement("div");
+			
+			  wikicrimesDiv = document.createElement("div");
+			  this.setButtonStyle_(wikicrimesDiv);
+			  container.appendChild(wikicrimesDiv);
+			  wikicrimesDiv.innerHTML = htmlLegenda();
+			 
+			  map.getContainer().appendChild(container);
+			  return container;
+			}
+			
+			
+			LegendaWikicrimes.prototype.getDefaultPosition = function() {
+			  return new GControlPosition(G_ANCHOR_BOTTOM_RIGHT, new GSize(10,16));
+			}
+			
+			
+			LegendaWikicrimes.prototype.setButtonStyle_ = function(button) {				
+			  //button.style.height = "3.8em";
+			  //button.style.cursor = "pointer";
+			  //button.style.backgroundImage = "url('./images/logoWikicrimesEmbedded.PNG')";
+			}
+
+			function requisicaoTexto(servletName, params){
+				http_request = GXmlHttp.create();
+				if (http_request.overrideMimeType) 
+				     http_request.overrideMimeType('text/xml');
+				http_request.open('POST', servletName, false);
+				http_request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+				http_request.send(params);
+
+				
+				if (http_request.readyState == 4 && http_request.status == 200){
+					//console.log('servletName: ' + servletName + ', params: ' + params + ', responseText: ' + http_request.responseText);
+					return http_request.responseText;
+				}else{
+					//console.log('servletName: ' + servletName + ', params: ' + params + ', status: ' + http_request.status + ', readyState: ' + http_request.readyState);
+					return null;
+				}
+			}
+			
+			
+			function mostrarFiltro(){
+				openModalFiltro('340', '400', '#{messages['titulo.pesquisaCrimes']}');
+			}
+
+			function esconderFiltro(){
+				closeModalFiltro('modalFiltro');
+			}
+
+
+	    /* ]]> */
+	    --></script>	
+
+</html>

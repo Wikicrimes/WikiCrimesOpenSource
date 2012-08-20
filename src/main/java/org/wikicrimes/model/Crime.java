@@ -1,0 +1,525 @@
+/**
+ 
+    WikiCrimes (http://www.wikicrimes.org) is a project/software that allows posting and accessing criminal occurrences in a digital map.
+    The philosophy that drives Wikicrimes is the same as Wikipedia: mass collaboration produces valuable knowledge.
+    That is to say, if everybody participates, the criminal mapping will be made collaboratively and everybody
+    will leverage crime information digitalized in the map. That is the reason for the slogan "Share crime information. Keep safe!". 
+    Wikicrimes is not a project developed by any security institution. 
+    In fact it is a project from the citizen to the citizen. 
+     
+    
+    Copyright (C) 2008  Wikinova Solutions (http://www.wikinova.com.br)
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ **/
+package org.wikicrimes.model;
+
+import java.util.Date;
+import java.util.Set;
+
+public class Crime extends GeoEvent {
+
+	private static final long serialVersionUID = -8178805938830754193L;
+
+	/**
+	 * Constantes
+	 */
+	public static Long INATIVO = new Long(1);
+	public static Long ATIVO = new Long(0);
+
+	public static Long MASCULINO = new Long(1);
+	public static Long FEMININO = new Long(0);
+	
+	/**
+	 * Variaveis de Instancia
+	 */
+	private Long idCrime;
+	
+	private String chave;
+
+	private Set<Confirmacao> confirmacoes;
+	
+	private Set<CrimeRazao> razoes;
+	
+	private Double latitude;
+
+	private Double longitude;
+
+	private Long status;
+	
+	private Long confirmacoesPositivas;
+	private Long confirmacoesNegativas;
+	
+	private Long visualizacoes;
+	
+	private Long qtdComentarios;
+	
+	// Dados da ocorr�ncia
+	private TipoCrime tipoCrime;
+
+	private TipoRegistro tipoRegistro;
+
+	private TipoLocalRoubo tipoLocalRoubo;
+	
+	private TipoVitima tipoVitima;
+
+	private TipoLocal tipoLocal;
+
+	private TipoPapel tipoPapel;
+
+	private Usuario usuario;
+
+	private Date data;
+	
+	private String ip;
+	
+	private String cep;
+	
+	private Date dataHoraRegistro;
+	
+	// Autor
+	private Long quantidade;
+	
+	private Long faixaEtaria;
+	
+	private TipoArmaUsada tipoArmaUsada;
+
+	private Long sexo;
+	
+	private TipoTransporte tipoTransporte;
+
+	// Vitimas
+	private Long qtdMasculino;
+
+	private Long qtdFeminino;
+	
+	private String descricao;
+	
+	private Long horario;
+	
+	private String endereco;
+	
+	private String cidade;
+	
+	private String estado;
+	
+	private String embedNoticia;
+	
+	private String linkNoticia;
+	
+	private String pais;
+	
+	private String registradoPelaApi;
+	
+	private UsuarioRedeSocial usuarioRedeSocial;
+	
+	private String idOriginal;
+	
+	private BaseCrimesImportacao baseOrigem;
+	
+//	TODO Manter lista de Credibilidades para futura atualizacao
+//	private Set<Credibilidade> credibilidades;
+	
+	private Double ultimaCredibilidade;
+	
+	private String cacheEstatisticas;
+	
+
+	public UsuarioRedeSocial getUsuarioRedeSocial() {
+		return usuarioRedeSocial;
+	}
+
+	public void setUsuarioRedeSocial(UsuarioRedeSocial usuarioRedeSocial) {
+		this.usuarioRedeSocial = usuarioRedeSocial;
+	}
+
+	public Crime(Long idCrime) {
+		this.setIdCrime(idCrime);
+	}
+
+	public Crime() {
+		this.setStatus(ATIVO);
+	}
+
+	public Long getIdCrime() {
+		return idCrime;
+	}
+
+	public void setIdCrime(Long idCrime) {
+		this.idCrime = idCrime;
+	}
+	
+	@Override
+	public Long getId() {
+		return idCrime;
+	}
+
+	public Set<Confirmacao> getConfirmacoes() {
+		return confirmacoes;
+	}
+
+	public void setConfirmacoes(Set<Confirmacao> confirmacoes) {
+		this.confirmacoes = confirmacoes;
+	}
+
+	public TipoCrime getTipoCrime() {
+		return tipoCrime;
+	}
+
+	public void setTipoCrime(TipoCrime tipoCrime) {
+		this.tipoCrime = tipoCrime;
+	}
+
+	public TipoRegistro getTipoRegistro() {
+		return tipoRegistro;
+	}
+
+	public void setTipoRegistro(TipoRegistro tipoRegistro) {
+		this.tipoRegistro = tipoRegistro;
+	}
+
+	public TipoLocalRoubo getTipoLocalRoubo() {
+		return tipoLocalRoubo;
+	}
+
+	public void setTipoLocalRoubo(TipoLocalRoubo tipoLocalRoubo) {
+		this.tipoLocalRoubo = tipoLocalRoubo;
+	}
+
+	public TipoArmaUsada getTipoArmaUsada() {
+		return tipoArmaUsada;
+	}
+
+	public void setTipoArmaUsada(TipoArmaUsada tipoArmaUsada) {
+		this.tipoArmaUsada = tipoArmaUsada;
+	}
+
+	public TipoLocal getTipoLocal() {
+		return tipoLocal;
+	}
+
+	public void setTipoLocal(TipoLocal tipoLocal) {
+		this.tipoLocal = tipoLocal;
+	}
+
+	public TipoPapel getTipoPapel() {
+		return tipoPapel;
+	}
+
+	public void setTipoPapel(TipoPapel tipoPapel) {
+		this.tipoPapel = tipoPapel;
+	}
+
+	public Double getLatitude() {
+		return latitude;
+	}
+
+	public void setLatitude(Double latitude) {
+		this.latitude = latitude;
+	}
+
+	public Double getLongitude() {
+		return longitude;
+	}
+
+	public void setLongitude(Double longitude) {
+		this.longitude = longitude;
+	}
+
+	public String getDescricao() {
+		return descricao;
+	}
+
+	public void setDescricao(String descricao) {
+		this.descricao = descricao;
+	}
+
+	public Date getData() {
+		return data;
+	}
+
+	public void setData(Date data) {
+		this.data = data;
+	}
+
+	public Long getStatus() {
+		return status;
+	}
+
+	public void setStatus(Long status) {
+		this.status = status;
+	}
+
+	public Long getSexo() {
+		return sexo;
+	}
+
+	public void setSexo(Long sexo) {
+		this.sexo = sexo;
+	}
+
+	public Usuario getUsuario() {
+		return usuario;
+	}
+
+	public void setUsuario(Usuario usuario) {
+		this.usuario = usuario;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+
+		if (!(obj instanceof Crime)) {
+			return false;
+		} else {
+			Crime crime = (Crime) obj;
+			return crime.getIdCrime().equals(this.getIdCrime());
+		}
+
+	}
+
+	public Long getQuantidade() {
+		return quantidade;
+	}
+
+	public void setQuantidade(Long quantidade) {
+		this.quantidade = quantidade;
+	}
+
+	public Long getFaixaEtaria() {
+		return faixaEtaria;
+	}
+
+	public void setFaixaEtaria(Long faixaEtaria) {
+		this.faixaEtaria = faixaEtaria;
+	}
+
+	public TipoTransporte getTipoTransporte() {
+		return tipoTransporte;
+	}
+
+	public void setTipoTransporte(TipoTransporte tipoTransporte) {
+		this.tipoTransporte = tipoTransporte;
+	}
+
+	public Long getQtdMasculino() {
+		return qtdMasculino;
+	}
+
+	public void setQtdMasculino(Long qtdMasculino) {
+		this.qtdMasculino = qtdMasculino;
+	}
+
+	public Long getQtdFeminino() {
+		return qtdFeminino;
+	}
+
+	public void setQtdFeminino(Long qtdFeminino) {
+		this.qtdFeminino = qtdFeminino;
+	}
+
+	public Long getHorario() {
+	    return horario;
+	}
+
+	public void setHorario(Long horario) {
+	    this.horario = horario;
+	}
+
+	public TipoVitima getTipoVitima() {
+		return tipoVitima;
+	}
+
+	public void setTipoVitima(TipoVitima tipoVitima) {
+		this.tipoVitima = tipoVitima;
+	}
+
+	public Long getConfirmacoesNegativas() {
+		return confirmacoesNegativas;
+	}
+
+	public void setConfirmacoesNegativas(Long confirmacoesNegativas) {
+		this.confirmacoesNegativas = confirmacoesNegativas;
+	}
+
+	public Long getConfirmacoesPositivas() {
+		return confirmacoesPositivas;
+	}
+
+	public void setConfirmacoesPositivas(Long confirmacoesPositivas) {
+		this.confirmacoesPositivas = confirmacoesPositivas;
+	}
+
+	public Date getDataHoraRegistro() {
+		return dataHoraRegistro;
+	}
+
+	public void setDataHoraRegistro(Date dataHoraRegistro) {
+		this.dataHoraRegistro = dataHoraRegistro;
+	}
+
+	public String getIp() {
+		return ip;
+	}
+
+	public void setIp(String ip) {
+		this.ip = ip;
+	}
+
+	public String getCidade() {
+		return cidade;
+	}
+
+	public void setCidade(String cidade) {
+		this.cidade = cidade;
+	}
+
+	public String getEndereco() {
+		return endereco;
+	}
+
+	public void setEndereco(String endereco) {
+		this.endereco = endereco;
+	}
+
+	public String getEstado() {
+		return estado;
+	}
+
+	public void setEstado(String estado) {
+		this.estado = estado;
+	}
+
+	public String getPais() {
+		return pais;
+	}
+
+	public void setPais(String pais) {
+		this.pais = pais;
+	}
+
+	public String getChave() {
+		return chave;
+	}
+
+	public void setChave(String chave) {
+		this.chave = chave;
+	}
+
+	public Long getVisualizacoes() {
+		return visualizacoes;
+	}
+
+	public void setVisualizacoes(Long visualizacoes) {
+		this.visualizacoes = visualizacoes;
+	}
+
+	public String getCep() {
+		return cep;
+	}
+
+	public void setCep(String cep) {
+		this.cep = cep;
+	}
+
+	public String getEmbedNoticia() {
+		return embedNoticia;
+	}
+
+	public void setEmbedNoticia(String embedNoticia) {
+		this.embedNoticia = embedNoticia;
+	}
+
+	public String getLinkNoticia() {
+		return linkNoticia;
+	}
+
+	public void setLinkNoticia(String linkNoticia) {
+		this.linkNoticia = linkNoticia;
+	}
+
+	public Set<CrimeRazao> getRazoes() {
+		return razoes;
+	}
+
+	public void setRazoes(Set<CrimeRazao> razoes) {
+		this.razoes = razoes;
+	}
+
+	public Long getQtdComentarios() {
+		return qtdComentarios;
+	}
+
+	public void setQtdComentarios(Long qtdComentarios) {
+		this.qtdComentarios = qtdComentarios;
+	}
+
+	public String getRegistradoPelaApi() {
+		return registradoPelaApi;
+	}
+
+	public void setRegistradoPelaApi(String registradoPelaApi) {
+		this.registradoPelaApi = registradoPelaApi;
+	}
+
+	// Credibilidade
+//	public void setCredibilidades(Set<Credibilidade> credibilidades) {
+//		this.credibilidades = credibilidades;
+//	}
+//	public Set<Credibilidade> getCredibilidades() {
+//		return credibilidades;
+//	}
+//	
+//	public Credibilidade getUltimaCredibilidade() {
+//		return (Credibilidade)credibilidades.toArray()[credibilidades.size()-1];
+//	}
+
+	public Double getUltimaCredibilidade() {
+		return ultimaCredibilidade;
+	}
+	public void setUltimaCredibilidade(Double ultimaCredibilidade) {
+		this.ultimaCredibilidade = ultimaCredibilidade;
+	}
+	
+	public String getIdOriginal() {
+		return idOriginal;
+	}
+
+	public void setIdOriginal(String idOriginal) {
+		this.idOriginal = idOriginal;
+	}
+
+	public BaseCrimesImportacao getBaseOrigem() {
+		return baseOrigem;
+	}
+
+	public void setBaseOrigem(BaseCrimesImportacao baseOrigem) {
+		this.baseOrigem = baseOrigem;
+	}
+
+	public String getCacheEstatisticas() {
+		return cacheEstatisticas;
+	}
+	
+	public void setCacheEstatisticas(String cacheEstatisticas) {
+		this.cacheEstatisticas = cacheEstatisticas;
+	}
+
+	@Override
+	public String toString() {
+		return "lat:" + latitude + ", lng:" + longitude;
+	}
+}
+
+

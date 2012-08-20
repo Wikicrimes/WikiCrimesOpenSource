@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC
+"-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:c="http://java.sun.com/jstl/core"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:t="http://myfaces.apache.org/tomahawk"
+	xmlns:fn="http://java.sun.com/jsp/jstl/functions"
+	xmlns:rich="http://richfaces.org/rich"
+	xmlns:a4j="http://richfaces.org/a4j">
+	<br/>
+	
+	<head>
+		<meta http-equiv="Cache-Control" content="no-store" />
+		<meta http-equiv="Pragma" content="no-cache" />
+		<meta http-equiv="Expires" content="0" />
+		<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+		<link rel="shortcut icon" href="./images/favicon.ico"
+			type="image/x-icon" />
+		<link rel="stylesheet" type="text/css" href="./styles/wikicrimes.css"
+			title="default" />
+		
+	</head>
+	
+	<f:view>
+		<ui:composition template="layoutCrime.xhtml">
+			<ui:define name="titulo">
+                #{mostrarDadosForm.crime.tipoCrime.descricao} | #{mostrarDadosForm.crime.estado} - #{mostrarDadosForm.crime.cidade} - #{mostrarDadosForm.crime.descricao}
+            </ui:define>
+			<ui:define name="menu">		
+					<ui:include src="header.xhtml" />
+			</ui:define>
+			<ui:define name="idioma">
+					
+				<ui:include src="idioma.xhtml" />
+				
+			</ui:define>
+			
+			<ui:define name="conteudo">
+			<hr /><br clear="both" />
+				
+				<rich:panel>
+					<t:panelGrid>
+						<t:panelGroup>
+							<h:outputLink value="/">
+								<h:outputText value="#{messages['page.main']}"/>
+							</h:outputLink>
+							<h:outputText value=" >> #{messages['page.crime']}" />
+						</t:panelGroup>
+					</t:panelGrid>
+				</rich:panel>
+				
+				<div id="detalhecrime">
+					<c:if test="#{mostrarDadosForm.crime.status == 1}">
+						<p><h:outputText value="Este crime foi removido pelo administrador." /></p>
+					</c:if>
+					<c:if test="#{mostrarDadosForm.crime.status == 0}">
+					<div id="detalhemapa" style="height: 300px; width: 500px; float: right; margin: 20px;"></div>
+					
+					<c:if test="#{mostrarDadosForm.crime.cidade != null}">
+			 		<h1 style="font-size:12px"><h:outputFormat value="#{messages['crime.titulo']}">
+			 		 	<c:if test="#{mostrarDadosForm.crime.tipoCrime.idTipoCrime != 5}">
+			 			<f:param value="#{mostrarDadosForm.crime.tipoCrime.descricao}"/>
+			 			</c:if>
+			 			<c:if test="#{mostrarDadosForm.crime.tipoCrime.idTipoCrime == 5}">
+			 			<f:param value="#{mostrarDadosForm.crime.tipoVitima.descricao}"/>
+			 			</c:if>
+			 			<f:param value="#{mostrarDadosForm.crime.cidade}"/>
+			 			<f:param value="#{mostrarDadosForm.crime.estado}"/> 
+			 			<f:param value="#{mostrarDadosForm.crime.dataHoraRegistro}"/>
+			 			<f:convertDateTime pattern="#{messages['crime.data.formato']}" />
+			 		</h:outputFormat></h1>
+			 		</c:if>
+			 		<c:if test="#{mostrarDadosForm.crime.cidade == null}">
+			 		<p><h:outputFormat value="#{messages['crime.titulo2']}"> 
+			 			<f:param value="#{mostrarDadosForm.crime.dataHoraRegistro}"/>
+			 			<f:convertDateTime pattern="#{messages['crime.data.formato']}" />
+			 		</h:outputFormat></p>
+			 		</c:if>
+			 		
+					<p style="text-align: justify;"><h:outputText value="#{mostrarDadosForm.crime.descricao}" /></p>
+					<c:if test="#{mostrarDadosForm.crime.linkNoticia}">
+					<p style="text-align: justify;">Fonte:<br/>
+						<h:outputLink target="_blank" value="#{mostrarDadosForm.crime.linkNoticia}">
+							<h:outputText value="#{mostrarDadosForm.crime.linkNoticia}"/>
+						</h:outputLink>
+					</p>
+					</c:if>
+					<div>
+					<h:outputLink value="main.html">
+						<h:outputText value="#{messages['crime.mapainterativo']}"/>
+						<f:param name="idcrime" value="#{mostrarDadosForm.crime.chave}"/>
+					</h:outputLink>
+					</div>
+					
+					<hr/>
+					<div id="divFiltrosAplicados"></div>
+					<div id="loadingPequeno"></div>
+					
+					<t:dataTable id="tiposcrimes" var="tipoCrime" value="#{mostrarDadosForm.tiposCrimes}">
+					<t:column>
+						<div>
+							<h:outputLink value="listarCrimesTipo.html">
+								<h:outputText value="#{messages['crime.relacionados']} " />
+								<h:outputText value="#{messages[tipoCrime.nome]}" />
+								<f:param name="idTipoCrime" value="#{tipoCrime.idTipoCrime}" />
+								<f:param name="paginaAtual" value="1" />
+							</h:outputLink>
+						</div>
+					</t:column>
+					</t:dataTable>
+					</c:if>
+				</div>
+				<t:saveState value="#{mostrarDadosForm.idCrime}"></t:saveState>
+			</ui:define>
+			
+			<ui:define name="crimes">
+				<ui:include src="mostrarCrimesMain.xhtml"/>
+				<hr style="border: 0; border-top: 2px #A9A9A9 dotted;" />
+			</ui:define>
+		
+			<ui:define name="footer">
+				<ui:include src="footer.xhtml" />
+			</ui:define>
+		</ui:composition>
+	</f:view>
+	</html>

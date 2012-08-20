@@ -1,0 +1,571 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC
+"-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:c="http://java.sun.com/jstl/core"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:t="http://myfaces.apache.org/tomahawk">
+	
+	<f:loadBundle var="messages" basename="messages" />
+	<script type="text/javascript"><!-- 
+	/* <![CDATA[ */
+			
+			var arrayCrimesLatLng = new Array();
+			var index = 0;
+		    var lastKernelRequest;
+		    var photo = new TPhoto();
+			var northPixel;
+			var southPixel;
+			var eastPixel;
+			var westPixel;
+			var width;
+			var height;
+			
+			var mapa =  '#{messages["webapp.nome.mapa.default"]}';
+			var satelite = '#{messages["webapp.nome.mapa.satelite"]}';
+			var hibrido = '#{messages["webapp.nome.mapa.hibrido"]}';
+			var terreno = '#{messages["webapp.nome.mapa.terreno"]}';
+			var kernelLabel = '#{messages["webapp.nome.mapa.zonasquentes"]}';
+			var earth ="3D";
+			var textoEmbedMapaWikiCrimes = '#{messages["texto.embed.mapa.wikicrimes"]}';
+			var textoComandoKMLWikiCrimes = '#{messages["texto.kml.mapa.wikicrimes"]}';
+			var localeWikiCrimes = '#{messages["webapp.locale"]}'
+			
+		    //var aindaCarregando = false;
+		    var me;
+		    var kernelLayer;
+		    var kernelDiv;
+
+		    var kernelModifiedByUser = false; //usuario mudou o kernel pelo botao
+		    var podeMudarModoKernel = true; //pq qd abre a janela arearisco, tem que ficar sempre kernel desligado
+		    
+		    var defaultFilter = true; //limitar o filtro pra 1000 crimes se o usuario nao especificar nada no filtro (setado pra true sempre q o usuario faz busca)
+
+			function ativaMapaKernel(primeiraVez){
+			    if(!kernelEnabled){
+				  	kernelEnabled = true;
+				  	selecionarComando(map, 'kernel');
+				  	limpaCrimesAgrupador();
+				  	document.getElementById("divTelaFiltro").style.visibility = "hidden";
+				  	aindaCarregando = true;
+				  	podeCarregarCrimes=true;
+				  	if(statusLegenda=='visivel')
+						wikicrimesDiv.innerHTML = htmlLegenda();
+					if(!primeiraVez){
+						pintaMapaKernel();
+					}
+					if(!isJanelaAreaRiscoVisible())
+				  		ativaMarcacaoHotspot();
+			  	}	
+			}
+
+			function desativaMapaKernel(){
+				removeHintComandosMapa();
+				kernelEnabled = false;
+				mostraCrimesAgrupador();
+				selecionarComando(map, 'mao');
+				apagaMapaKernel();
+				mostraMarcadores();
+				podeCarregarCrimes=true;
+				if(statusLegenda=='visivel')
+					wikicrimesDiv.innerHTML = htmlLegenda();
+				if(!isJanelaAreaRiscoVisible())
+					desativaMarcacaoHotspot();
+			}
+
+			function crimeKernelMap(lng, lat, crimeMarker){
+				this.lng = lng;
+				this.lat = lat;
+				this.crimeMarker = crimeMarker;
+			}
+			
+			function zeraArrayCrimes(){
+				arrayCrimesLatLng = new Array();
+				index = 0;	
+				apagaMapaKernel();
+				desabilitaBotaoKernel();
+			}
+			
+			function desabilitaBotaoKernel(){
+				if (me != null && me.kernelLayer != null){
+					me.kernelLayer.disable();
+					me.toggleButton_(kernelDiv.firstChild, me.kernelLayer.getEnabled());
+				}
+			}
+			function apagaMapaKernel(){
+				map.removeTPhoto(photo);
+				if(!isJanelaAreaRiscoVisible())
+					desmarcaHotspot();
+			}
+			
+			function pintaMapaKernel(){
+				exibeImagemMapaKernel();
+				if(statusLegenda=='visivel'){
+					//atualizaLegendaKernel();
+				}
+			}
+			
+			function updateStatistics(eventId, eventType){
+				updateKernelMode(eventId);
+				var url = buildStatisticsUrl(eventId, eventType);
+				///*DEBUG*/console.log("update " + url);
+				var req = requestStatistics(url);
+				if (req.readyState == 4 && req.status == 200){
+					statistics = eval("(" + req.responseText + ")");
+					if(kernelEnabled){
+						uncompressBooleanGrid();
+					}else{
+						constroiMarcadores();
+					}
+				}
+			}
+			
+			function updateKernelMode(eventId){
+				if(kernelModifiedByUser){
+					kernelModifiedByUser = false;
+					return;
+				}
+				
+				var shouldEnable;
+				if(eventId){
+					shouldEnable = false;
+				}else if(map.getZoom() <= zoomLimiteSupKernel){
+					shouldEnable = true;
+				}else if(map.getZoom() <= zoomLimiteInfMarcadores){
+					shouldEnable = false;
+				}else{
+					shouldEnable = false;
+				}
+				
+				if(podeMudarModoKernel)
+				if(shouldEnable){
+					ativaMapaKernel();
+				}else{
+					desativaMapaKernel();
+				}
+			}
+
+			function uncompressBooleanGrid(){
+				var str = statistics.kernel.booleanGrid;
+				if(!str) return;
+				var lines = str.split("\n");
+				var array = new Array();
+				for(var i=0; i<lines.length; i++){
+					array[i] = new Array();
+					var col = lines[i];
+					for(var j=0; j<col.length; j++){
+						array[i][j] = col[j];
+					}
+				}
+				statistics.kernel.booleanGrid = array;
+			}
+
+			//grid compactada
+			/*function getBooleanGrid(){
+				var url = statistics.kernel.booleanGridUrl;
+				if(!url) return;
+
+				var doneTransfering = new function(zip){
+					var extracted = zip.extract();
+					var reader = extracted.openTextReader();
+					var i = 0;
+					var j = 0;
+					var grid = new Array();
+					grid[i] = new Array();
+					var c = reader.readChar()
+					while(c){
+						switch(c){
+						case '\n':
+							i=++;
+							grid[i] = new Array();
+							break;
+						default:
+							grid[i][j] = c;
+						}
+						c = reader.readLine()
+					}
+					statistics.kernel.booleanGrid = grid;
+				}
+
+				new ZipFile(url, doneTransfering);
+			}*/
+
+			function buildStatisticsUrl(eventId, eventType){
+				lastKernelRequest = {};
+				var zoom = map.getZoom();
+				var url ='';
+				if(kernelEnabled){
+					url += 'actions=kernel|charts|json';
+					if(zoom >= minZoomAreasRisco && zoom <= maxZoomAreasRisco){
+						url += '|polygons';
+					}
+					url += boundsPixelUrlParams(map);
+				}else{
+					url += 'actions=events|charts|json';
+				}
+				if(eventId && eventType){
+					url += pixelSizeUrlParams();
+					url += '&eventId=' + eventId + '&eventType=' + eventType;
+					url += '&zoom=' + zoomLimiteInfMarcadores;
+				}else{
+					url += boundsLatLngUrlParams(map);
+					url += '&zoom=' + zoom;
+					lastKernelRequest.zoom = zoom;
+				}
+				url += parametrosFiltroCrimes();
+				return url;
+			}
+
+			function pixelSizeUrlParams(){
+				var div = document.getElementById("map");
+				var w = div.clientWidth;
+				var h = div.clientHeight;
+				return "&widthPixel=" + w + "&heightPixel=" + h;
+			}
+			
+			function parametrosFiltroCrimes(){
+				submeteu=false;					 	
+			    tipoCrime = document.getElementById("tipoCrime").value;
+			    tipoVitima = document.getElementById("tipoVitima").value;  
+			    tipoLocal = document.getElementById("tipoLocal").value;
+			    dataInicial = document.getElementById("dataInicial").value.split("/");
+			    dataFinal = document.getElementById("dataFinal").value.split("/");
+			    horarioInicial = document.getElementById("filtroForm:horarioInicial").value;
+			    horarioFinal = document.getElementById("filtroForm:horarioFinal").value;
+		        entidadeCertificadora = document.getElementById("filtroForm:entidadeCertificadora").value;
+			    var isEntidadeCertificadoraSelecionada = document.getElementById("filtroForm:crimeConfirmadoEntidadeCertificadora").checked;
+                if(isEntidadeCertificadoraSelecionada == false) {
+					document.getElementById("filtroForm:entidadeCertificadora").disabled = true;
+					document.getElementById("filtroForm:entidadeCertificadora").value="";                                                     
+					entidadeCertificadora = "-1"; 
+                }
+				    if (document.getElementById("filtroForm:crimeConfirmadoPositivamente").checked == true )
+					    confirmadosPositivamente = document.getElementById("filtroForm:crimeConfirmadoPositivamente").value;
+			    else
+				    confirmadosPositivamente = "";
+				    
+				return '&tc='+tipoCrime+'&tv='+tipoVitima+'&tl='+document.getElementById("tipoLocal").value+'&di='+dataInicial+'&df='+dataFinal+'&hi='+horarioInicial+'&hf='+horarioFinal +  '&z=' + map.getZoom()+ '&ec=' + entidadeCertificadora + '&cp=' + confirmadosPositivamente +'&id=' + ignoraData + '&defilter=' + defaultFilter;
+			}
+
+			function boundsPixelUrlParams(map){
+				var bounds = map.getBounds();
+
+				//Passa os limites para pixel
+				var nePixel = latlngToPixel(bounds.getNorthEast());
+				var swPixel = latlngToPixel(bounds.getSouthWest());
+				northPixel = nePixel.y;
+				southPixel = swPixel.y;
+				eastPixel = nePixel.x;
+				westPixel = swPixel.x;
+				var str = '&northPixel=' + northPixel + '&southPixel=' + southPixel + '&eastPixel=' + eastPixel + '&westPixel=' + westPixel;
+				lastKernelRequest.north = northPixel;
+				lastKernelRequest.south = southPixel;
+				lastKernelRequest.west = westPixel;
+				lastKernelRequest.east = eastPixel;
+
+				//altura e largra
+				var centroLatLng = bounds.getCenter();
+				var centroPixel = latlngToPixel(centroLatLng);
+				var width = (eastPixel - westPixel);
+				var height = (southPixel - northPixel);
+				
+				//correcao problema das emendas do mapa (linhas com latitude 0 e longitude 0)
+				if(width < 0)
+					width = centroPixel.x < westPixel ? 2*(eastPixel-centroPixel.x) : 2*(centroPixel.x-westPixel);
+				if(height < 0)
+					height = centroPixel.y < southPixel ? 2*(northPixel-centroPixel.y) : 2*(centroPixel.y-southPixel);
+		      	str +='&widthPixel='+width+'&heightPixel='+height;
+		      	
+				return str;
+			}
+
+			function sizePixel(bounds){
+				//Passa os limites para pixel
+				var nePixel = latlngToPixel(bounds.getNorthEast());
+				var swPixel = latlngToPixel(bounds.getSouthWest());
+				northPixel = nePixel.y;
+				southPixel = swPixel.y;
+				eastPixel = nePixel.x;
+				westPixel = swPixel.x;
+
+				//altura e largra
+				var centroLatLng = bounds.getCenter();
+				var centroPixel = latlngToPixel(centroLatLng);
+				var width = (eastPixel - westPixel);
+				var height = (southPixel - northPixel);
+				
+				//correcao problema das emendas do mapa (linhas com latitude 0 e longitude 0)
+				if(width < 0)
+					width = centroPixel.x < westPixel ? 2*(eastPixel-centroPixel.x) : 2*(centroPixel.x-westPixel);
+				if(height < 0)
+					height = centroPixel.y < southPixel ? 2*(northPixel-centroPixel.y) : 2*(centroPixel.y-southPixel);
+
+			    var size = {w : width, h : height};
+				return size;
+			}
+
+			function boundsLatLngUrlParams(map){
+				var bounds = map.getBounds();
+
+				//norte, sul, leste, oeste
+				var neLatLng = bounds.getNorthEast();
+				var swLatLng = bounds.getSouthWest();
+				northLatLng = neLatLng.y;
+				southLatLng = swLatLng.y;
+				eastLatLng = neLatLng.x;
+				westLatLng = swLatLng.x;
+				var str = '&northLatLng=' + northLatLng + '&southLatLng=' + southLatLng + '&eastLatLng=' + eastLatLng + '&westLatLng=' + westLatLng;
+
+				//altura e largra
+				var centroLatLng = bounds.getCenter();
+				var width = (eastLatLng - westLatLng);
+				var height = (southLatLng - northLatLng);
+				
+				//correcao problema das emendas do mapa (linhas com latitude 0 e longitude 0)
+				if(width < 0)
+					width = centroLatLng.x < westLatLng ? 2*(eastLatLng-centroLatLng.x) : 2*(centroLatLng.x-westLatLng);
+				if(height < 0)
+					height = centroLatLng.y < southLatLng ? 2*(northLatLng-centroLatLng.y) : 2*(centroLatLng.y-southLatLng);
+		      	str +='&widthLatLng='+width+'&heightLatLng='+height;
+		      	
+				return str;
+			}
+
+			function pontosUrlParam(){
+				var str = '&pontoXY=';
+				var arrayCrimesPixel = crimesTelaPixel();
+				
+				//Monta os parametros da requisicao contendo todos os crimes clicados na tela
+				for (i = 0; i < arrayCrimesPixel.length; i++){
+					//Crimes sao adicionados como strings separados por "a" e os latlng separados por ","
+					str += arrayCrimesPixel[i].lng + "," + arrayCrimesPixel[i].lat + "a";
+				}
+				if(arrayCrimesPixel.length > 0)
+					str = str.substring(0, str.length-2);
+
+				return str;
+			}
+
+			function pontosLatLngUrlParam(bounds){
+				var str = "&pontosLatLng=";
+				
+				//Monta os parametros da requisicao contendo todos os crimes clicados na tela
+				var cont = 0;
+				for (i=0; i < arrayCrimesLatLng.length; i++){
+					//Crimes sao adicionados como strings separados por "|" e os latlng separados por ","
+					var latlng = new GLatLng(arrayCrimesLatLng[i].lat, arrayCrimesLatLng[i].lng);
+					if(bounds.containsLatLng(latlng)){
+						str += latlng.lat() + "," + latlng.lng() + "|";
+						cont++;
+					}
+				}
+				if(str.charAt(str.length-1) == '|')
+					str = str.substring(0, str.length-2);
+
+				return str;
+			}
+
+			function requestStatistics(url) {
+			     http_request = GXmlHttp.create();
+			     if (http_request.overrideMimeType) {
+			        http_request.overrideMimeType('text/xml');
+			     }
+			     //Espera retorno do servidor
+			     http_request.open('POST', 'statistics', false);
+				 http_request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+				 http_request.send(url);
+
+				 return http_request;
+			}
+			
+			function exibeImagemMapaKernel(){
+				var bounds = map.getBounds();
+
+				removeHintComandosMapa();
+				
+				north = bounds.getNorthEast().lat();
+				south = bounds.getSouthWest().lat();
+				east = bounds.getNorthEast().lng();
+				west = bounds.getSouthWest().lng();
+				var lat1 = north;
+				var lon1 = west;
+				var lat2 = south;
+				var lon2 = east;
+
+				if (validateKernelImage()){
+					map.removeTPhoto(photo);
+			  		photo = new TPhoto();
+					photo.id = 'kernelImage' + new Date().getTime();
+					photo.percentOpacity = IE? 50 : 100; //no IE, a imagem vem opaca, precisa de transparencia aqui
+					photo.anchorTopLeft = new GLatLng(lat1,lon1);
+					photo.anchorBottomRight = new GLatLng(lat2,lon2);
+					photo.src = "statistics?actions=image&nocache=" + new Date().getTime();
+					map.addTPhoto(photo);
+			  	}else{
+			  		console.log("forceMapUpdate 1");
+					forceMapUpdate();
+					console.log("forceMapUpdate 2");
+			  	}
+			}
+
+			function validateKernelImage(){
+				var bounds = map.getBounds();
+				var nePixel = latlngToPixel(bounds.getNorthEast());
+				var swPixel = latlngToPixel(bounds.getSouthWest());
+				if(lastKernelRequest.zoom == map.getZoom()
+					&& lastKernelRequest.north == nePixel.y
+					&& lastKernelRequest.south == swPixel.y
+					&& lastKernelRequest.east == nePixel.x
+					&& lastKernelRequest.west == swPixel.x)
+					return true;
+				else
+					return false;
+			}
+
+			function escondeMarcadores(){
+				for (i = 0; i < arrayCrimesLatLng.length; i++){
+					arrayCrimesLatLng[i].crimeMarker.hide();
+				}
+			}
+			
+			function mostraMarcadores(){
+				for (i = 0; i < arrayCrimesLatLng.length; i++){
+					arrayCrimesLatLng[i].crimeMarker.show();
+				}
+			}
+
+			function limpaCrimesAgrupador(){
+				map.clearOverlays();	
+			}
+
+			function mostraCrimesAgrupador(){
+				for (k in crimesAtuais) {
+					map.addOverlay(crimesAtuais[k]);
+			 	}
+				atualizaMapa();
+			}		
+			
+			function crimesTelaPixel(){
+			
+				//Apaga o array de pixel
+				arrayCrimesPixel = new Array();	
+				
+				//recupera o zoom atual
+				var zoom = map.getZoom();
+				bounds = map.getBounds();
+				
+				for (i=0, j=0; i < arrayCrimesLatLng.length; i++){
+					//Convete o latlng em pixel
+					var latlng = new GLatLng(arrayCrimesLatLng[i].lat, arrayCrimesLatLng[i].lng);
+					var sw = map.getCurrentMapType().getProjection().fromLatLngToPixel(latlng, zoom);
+					
+					arrayCrimesLatLng[i].crimeMarker.hide();
+					
+					pontoXPixel = sw.y; //Longitude (x)
+					pontoYPixel = sw.x; //Latitude (y)
+
+					//So os crimes exibidos na tela atual								
+					//if(westPixel <= pontoYPixel && eastPixel >= pontoYPixel && northPixel <= pontoXPixel && southPixel >= pontoXPixel){
+					/*testeconsole.log(bounds.containsLatLng(latlng) + "; " +
+							"bounds: " + bounds.getNorthEast() + ", " + bounds.getSouthWest() + "; " +
+							"latlng: " + latlng.lat() + ", " + latlng.lng() );/*teste*/
+					if(bounds.containsLatLng(latlng)){
+						arrayCrimesPixel[j] = new crimeKernelMap(pontoXPixel, pontoYPixel);
+						j++;
+					}
+				}
+
+				//console.log("arrayCrimesPixel.length:"  + arrayCrimesPixel.length + ", arrayCrimesLatLng.length:"  + arrayCrimesLatLng.length);
+				
+				return arrayCrimesPixel;
+			}
+
+
+			//******************************************************************
+			//INFORMACOES DO MAPA DE KERNEL
+			
+			var statistics;
+			var densLimiteInfKernel = .01; //se a densMax for menor que isso, o mapa de kernel nao deve ser exibido (pra evitar hotspots de poucos crimes)
+			var densLimiteSupMarcadores = .01;
+			var zoomLimiteSupKernel = 16;
+			var zoomLimiteInfMarcadores = 17;
+			
+
+			//******************************************************************
+			//LEGENDA 
+			
+			function htmlLegendaKernel(){
+				
+				var html = "<table cellpading='0' cellspacing='0' style='width:110px; padding:4px ;border:1px solid #333333; opacity: .99; -moz-opacity:0.99; filter: alpha(opacity=99); background-color:white;font-family:Arial, sans-serif;  font-size: 11px;'>";
+				html+="     	<tr>";
+				html+="     		<td align='center' colspan='2'> <b id='tituloLegenda'> #{messages['wikicrimes.legenda.densidade']}" +"</b> <img width='12px' height='12px' src='./images/maximizar.png' onclick='mostraEscondeLeganda();' style='font-size: 12px;cursor: pointer;'/> </td>";
+				html+="         </tr>";
+				html+="     	<tr align='left'>";
+				html+="     		<td align='right'> <img style='width:20px; height:6em;' src='./images/gradiente2.png' />";
+				html+="     		<td align='left' id='valoresLegendaKernel' >";
+				html+="					<table align='left' cellpading='0' cellspacing='0' style='padding:4px;'>";
+				html+="     				<tr> <td> #{messages['wikicrimes.legenda.densidade.alta']} </td> </tr>";
+				html+="         			<tr> <td> &nbsp; </td></tr>";
+				html+="     				<tr> <td> #{messages['wikicrimes.legenda.densidade.media']} </td> </tr>";
+				html+="         			<tr> <td> &nbsp; </td></tr>";
+				html+="     				<tr> <td> #{messages['wikicrimes.legenda.densidade.baixa']} </td> </tr>";
+				html+="					</table>";
+				html+="     		</td>";
+				html+="         </tr>";
+				html+="		</table>";
+
+				return html;
+			}
+
+			function atualizaLegendaKernel(){
+
+				var kernel = statistics.kernel;
+				
+				var html="<table align='left' cellpading='0' cellspacing='0' style='padding:4px;'>";
+				html+="	<tr> <td>"+ arredonda(kernel.maxDensity) + "</td> </tr>";
+				html+="	<tr><td> &nbsp; </td></tr>";
+				html+="	<tr> <td>"+ arredonda(kernel.avgDensity) + "</td> </tr>";
+				html+="	<tr><td> &nbsp; </td></tr>";
+				html+="	<tr> <td>"+ arredonda(kernel.minDensity) + "</td> </tr>";
+				html+="</table>";
+				
+				var div = document.getElementById('valoresLegendaKernel');
+				if(div)
+					div.innerHTML = html;
+
+			}
+
+			function arredonda(num){
+				return Math.round(10000*num)/100;
+			}
+
+
+			//******************************************************************
+			//UTILIDADES
+
+			function pixelToLatlng(pixel, zoom){
+				var proj = map.getCurrentMapType().getProjection();
+				if(zoom)
+					return proj.fromPixelToLatLng(pixel, zoom);
+				else
+					return proj.fromPixelToLatLng(pixel, map.getZoom());
+			}
+
+			function latlngToPixel(latlng, zoom){
+				var proj = map.getCurrentMapType().getProjection();
+				if(zoom)
+					return proj.fromLatLngToPixel(latlng, zoom);
+				else
+					return proj.fromLatLngToPixel(latlng, map.getZoom());
+			}
+			
+
+			
+    /* ]]> */
+    --></script>	
+
+</html>

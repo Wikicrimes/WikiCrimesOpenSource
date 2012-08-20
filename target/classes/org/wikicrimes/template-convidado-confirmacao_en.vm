@@ -1,0 +1,114 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>WikiCrimes.org - Crime Confirmation</title>
+<style type="text/css">
+<!--
+.style1 {font-family: Arial, Helvetica, sans-serif}
+.style3 {font-size: 24px}
+.style4 {font-family: Arial, Helvetica, sans-serif; font-size: 18px; }
+.style5 {font-size: 16px}
+.style6 {font-family: Arial, Helvetica, sans-serif; font-size: 16px; }
+-->
+</style>
+</head>
+
+<body >
+<table align="center" width="678" border="0" cellpadding="1" cellspacing="1" bgcolor="#D7E4EC" >
+  <tr>
+    <td colspan="3"><img src="http://www.wikicrimes.org/images/topo.png" alt="header" width="678" height="67" /></td>
+  </tr>
+  <tr>
+    <td width="22">&nbsp;</td>
+    <td width="643">&nbsp;</td>
+    <td width="7">&nbsp;</td>
+  </tr>
+  <tr>
+    <td>&nbsp;</td>
+    <td><span class="style6">Hi </span><span class="style5">,</span></td>
+    <td>&nbsp;</td>
+  </tr>
+  <tr>
+    <td>&nbsp;</td>
+    <td><span class="style5"></span></td>
+    <td>&nbsp;</td>
+  </tr>
+  <tr>
+    <td height="44">&nbsp;</td>
+    <td>
+	<div align="justify"><span class="style6">${usuario.primeiroNome} (${usuario.email}) asked for you to give your contribution evaluating the posting  
+	(#if($crime.tipoCrime.idTipoCrime ne 5)
+			${tipoCrime} a ${tipoVitima}
+		#end
+		#if($crime.tipoCrime.idTipoCrime eq 5)
+			${tipoCrime}
+		#end) done in the WikiCrimes system:</span></div></td>
+    <td>&nbsp;</td>
+  </tr>
+#if($confirmacao.mensagem ne "")
+  <tr>
+    <td>&nbsp;</td>
+    <td><span class="style6">${usuario.primeiroNome}, justifies his/her request saying:</span></td>
+    <td>&nbsp;</td>
+  </tr>
+  <tr>
+    <td height="80">&nbsp;</td>
+    <td align="right">
+	<p align="right" class="style1">
+		<div align="justify" style="width:300px">
+			"${confirmacao.mensagem}"
+		</div>
+	</p>
+    </td>
+    <td>&nbsp;</td>
+  </tr>
+#end
+  <tr>
+    <td>&nbsp;</td>
+    <td align="center"><a href="http://www.wikicrimes.org/main.html?idcrime=${crime.chave}&idconf=${confirmacao.idConfirmacao}"><img src="http://www.wikicrimes.org/images/avalie_en.PNG" width="140" height="68" alt="evaluate" /></a></td>
+    <td>&nbsp;</td>
+  </tr>
+  <tr>
+    <td>&nbsp;</td>
+    <td class="style1"><div align="justify">Click on the button above or <span class="style3"><a href="http://www.wikicrimes.org/main.html?idcrime=${crime.chave}&idconf=${confirmacao.idConfirmacao}">here</a></span> to see the complete posting and leave your evaluation registered. Your evaluation is fundamental so that the posting of  ${usuario.primeiroNome} has credibility in the system, for that reason you were indicated to colaborate.</div></td>
+    <td>&nbsp;</td>
+  </tr>
+  <tr>
+    <td>&nbsp;</td>
+    <td><p align="justify"><span class="style1">    WikiCrimes is a project of crime information sharing in a digitilized map. For more information access <a href="http://www.wikicrimes .org">www.wikicrimes.org</a></span> </p>    </td>
+    <td>&nbsp;</td>
+  </tr>
+  <tr>
+    <td>&nbsp;</td>
+    <td class="style1"> Take this oportunity to register yourself as a user of WikiCrimes and know more about the project that gives you the information about were not is safe!	
+    </td>
+    <td>&nbsp;</td>
+  </tr>
+   <tr>
+    <td>&nbsp;</td>
+    <td class="style1"> 
+	<p>(*) In case you can not click on the link, copy the address "http://www.wikicrimes.org/main.html?idcrime=${crime.chave}&idconf=${confirmacao.idConfirmacao}" and paste it in the window of your browser</p>
+    </td>
+    <td>&nbsp;</td>
+  </tr>
+  <tr>
+    <td>&nbsp;</td>
+    <td><p class="style4">    Wikicrimes Team </p>    </td>
+    <td>&nbsp;</td>
+  </tr>
+  
+</table>
+
+<table align="center" width="678" border="0" cellpadding="1" cellspacing="1" bgcolor="whith">
+
+	<tr class="style1">
+		<td width="25"><img src="_space.gif" width="25" height="1" border="0"></td>	
+		<td width="225"><span class="footerText">This email was sent to [${confirmacao.usuario.email}]<br><strong><unsubscribe></unsubscribe></strong>, in case you are <em>not</em> interested in receiving emails like this anymore.</span></td>
+		<td width="225" align="right"><img src="/_space.gif" width="1" height="15" border="0"><br><span class="footerText"><strong><a href="#">WikiCrimes.org</a></strong><br>&copy;2007-2010 <a href="http://www.wikinova.com.br">Wikinova Solu&ccedil;&otilde;es</a>. All Rights Reserved<br></span><br><img src="/_space.gif" width="1" height="15" border="0"><br></td>
+
+		<td width="25"><img src="_space.gif" width="25" height="1" border="0"></td>	
+	</tr>
+</table>
+</body>
+</html>
